@@ -13,6 +13,10 @@ pub struct Vec3Norm<T>(Vec3<T>);
 
 impl<T> Vec3<T> {
 
+    pub fn zero() -> Vec3<T> where T: num_traits::Zero {
+        Vec3(T::zero(), T::zero(), T::zero())
+    } 
+
     pub fn is_zero(&self) -> bool where T: num_traits::Zero + PartialEq {
         self.0 == T::zero() &&
         self.1 == T::zero() &&

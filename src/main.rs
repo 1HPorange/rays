@@ -3,6 +3,7 @@ mod raytracing;
 mod geometry;
 mod color;
 mod output;
+mod camera;
 
 use vec3::*;
 
