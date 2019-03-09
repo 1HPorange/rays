@@ -1,5 +1,6 @@
 mod vec3;
 mod raytracing;
+mod geometry;
 
 use vec3::*;
 

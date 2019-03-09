@@ -1,17 +1,17 @@
 use super::vec3::*;
 
-struct Ray<T> {
-    origin: Vec3<T>,
-    direction: Vec3Norm<T>
+pub struct Ray<T> {
+    pub origin: Vec3<T>,
+    pub direction: Vec3Norm<T>
 }
 
-struct RayHitInfo {
+pub struct RayHitInfo {
 
 
 }
 
-trait RayTarget {
+pub trait RayTarget<T> {
 
-    fn test_intersection<T>(ray: &Ray<T>) -> Option<RayHitInfo>;
+    fn test_intersection(&self, ray: &Ray<T>) -> Option<RayHitInfo>;
 
 }
