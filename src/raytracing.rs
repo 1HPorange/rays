@@ -1,10 +1,8 @@
-mod vec3;
+use super::vec3::*;
 
-use vec3::*;
-
-struct Ray {
-    origin: Vec3;
-    direction: Vec3;
+struct Ray<T> {
+    origin: Vec3<T>,
+    direction: Vec3Norm<T>
 }
 
 struct RayHitInfo {
@@ -14,6 +12,6 @@ struct RayHitInfo {
 
 trait RayTarget {
 
-    Option<RayHitInfo> test_intersection()
+    fn test_intersection<T>(ray: &Ray<T>) -> Option<RayHitInfo>;
 
 }

@@ -1,4 +1,5 @@
 mod vec3;
+mod raytracing;
 
 use vec3::*;
 
@@ -18,8 +19,6 @@ fn main() {
 fn create_scene_desc() {
 
     add_geometry();
-
-    set_floor();
 
     set_sky();;
 }
@@ -41,18 +40,11 @@ fn save_to_file() {
 fn add_geometry() {
 
     let v1 = Vec3(2.0, 3.0, 4.0);
-    let v2 = Vec3::normalized(1.0, 0.0, 0.000000000001);
+    let v2 = Vec3::normalized(1.0, 0.0, 0.0);
 
-    dbg!(v1 * v1);
-    dbg!(v1 * v2);
-    dbg!(v2 * v1);
-    dbg!(v2 * v2);
+    dbg!(v1.normalize() / 2.0);
 
     std::process::exit(0)
-}
-
-fn set_floor() {
-
 }
 
 fn set_sky() {

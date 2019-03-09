@@ -3,6 +3,7 @@ extern crate num_traits;
 use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Mul;
+use std::ops::Div;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3<T>(pub T, pub T, pub T);
@@ -11,13 +12,38 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 pub struct Vec3Norm<T>(Vec3<T>);
 
 impl<T> Vec3<T> {
+
+    pub fn is_zero(&self) -> bool where T: num_traits::Zero + PartialEq {
+        self.0 == T::zero() &&
+        self.1 == T::zero() &&
+        self.2 == T::zero()
+    }
+
+    pub fn is_unit_length(&self) -> bool where T: num_traits::One + num_traits::Float {
+        self.length() == T::one()
+    }
+
     pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> where T: PartialEq + num_traits::Float + num_traits::One + std::fmt::Debug {
 
         let v = Vec3(x, y, z);
 
-        assert_eq!(v.length(), T::one(), "Cannot construct normalized vector out of input data!");
+        assert!(v.is_unit_length(), "Cannot construct normalized vector that is not unit length");
 
         Vec3Norm(v)
+    }
+
+    pub fn normalize(self) -> Vec3Norm<T> where Self: Vec3View<T>, T: num_traits::Zero + PartialEq + num_traits::Float {
+
+        assert!(!self.is_zero(), "Cannot normalize zero length vector");
+
+        Vec3Norm(self / self.length())
+    }
+
+    pub fn into_normalized(self) -> Vec3Norm<T> where T: num_traits::Float {
+
+        assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");
+
+        Vec3Norm(self)
     }
 }
 
@@ -78,24 +104,52 @@ impl<T> Vec3View<T> for Vec3Norm<T> where T: Copy {
     }
 }
 
-// TODO: Write macro for the stuff below
+macro_rules! operators_impl {
+    ($($t:ty)*) => ($(
+        impl<T,S> Mul<S> for $t where Self: Vec3View<T>, S: Copy, T: Mul<S, Output=T> {
 
-impl<T,R> Mul<R> for Vec3<T> where Self: Vec3View<T>, R: Vec3View<T>, T: Mul<Output=T> + Add<Output=T> {
+            type Output = Vec3<T>;
 
-    type Output = T;
+            fn mul(self, rhs: S) -> Self::Output {
+                self.scale(rhs)
+            }
 
-    fn mul(self, rhs: R) -> Self::Output {
-        self.dot(rhs)
-    }
+        }
 
+       impl<T,S> Div<S> for $t where Self: Vec3View<T>, S: Copy, T: Div<S, Output=T> + num_traits::One + Copy {
+
+            type Output = Vec3<T>;
+
+            fn div(self, rhs: S) -> Self::Output {
+                self.scale(T::one() / rhs)
+            }
+
+        }
+
+        impl<T,R> Add<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: Add<Output=T> {
+
+            type Output = Vec3<T>;
+
+            fn add(self, rhs: R) -> Self::Output {
+                Vec3(
+                    self.x() + rhs.x(),
+                    self.y() + rhs.y(),
+                    self.z() + rhs.z())
+            }
+        }
+
+        impl<T,R> Sub<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: Sub<Output=T> {
+
+            type Output = Vec3<T>;
+
+            fn sub(self, rhs: R) -> Self::Output {
+                Vec3(
+                    self.x() - rhs.x(),
+                    self.y() - rhs.y(),
+                    self.z() - rhs.z())
+            }
+        }
+    )*)
 }
 
-impl<T,R> Mul<R> for Vec3Norm<T> where Self: Vec3View<T>, R: Vec3View<T>, T: Mul<Output=T> + Add<Output=T> {
-
-    type Output = T;
-
-    fn mul(self, rhs: R) -> Self::Output {
-        self.dot(rhs)
-    }
-
-}
+operators_impl! { Vec3<T> Vec3Norm<T> }
