@@ -11,6 +11,8 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3Norm<T>(Vec3<T>);
 
+const EPSILON: f32 = 0.00001;
+
 impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn zero() -> Vec3<T> {
@@ -24,7 +26,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
     }
 
     pub fn is_unit_length(&self) -> bool {
-        self.length() == T::one()
+        (self.length() - T::one()).abs() < T::from(EPSILON).unwrap()
     }
 
     pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> {
@@ -52,7 +54,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
 }
 
 // This trait is there to grant/force read-only access to the fields of a vector
-pub trait Vec3View<T> {
+pub trait Vec3View<T> where T: num_traits::Float {
     fn x(&self) -> T;
     fn y(&self) -> T;
     fn z(&self) -> T;
@@ -61,11 +63,11 @@ pub trait Vec3View<T> {
         Vec3(self.x() * scalar, self.y() * scalar, self.z() * scalar)
     }
 
-    fn dot<R>(self, rhs: R) -> T where R: Vec3View<T>, T: Mul<Output=T> + Add<Output=T>, Self: Sized {
+    fn dot<R>(self, rhs: R) -> T where R: Vec3View<T>, Self: Sized {
         self.x() * rhs.x() + self.y() * rhs.y() + self.z() * rhs.z()
     }
 
-    fn cross<R>(self, rhs: R) -> Vec3<T> where R: Vec3View<T>, T: Mul<Output=T> + Sub<Output=T> + Copy, Self: Sized {
+    fn cross<R>(self, rhs: R) -> Vec3<T> where R: Vec3View<T>, Self: Sized {
         Vec3(
             self.y() * rhs.z() - self.z() * rhs.y(),
             self.z() * rhs.x() - self.x() * rhs.z(),
@@ -73,12 +75,16 @@ pub trait Vec3View<T> {
         )
     }
 
-    fn length(&self) -> T where T: Mul<Output=T> + Add<Output=T> + num_traits::Float {
-        (self.x() * self.x() + self.y() * self.y() + self.z() * self.z()).sqrt()
+    fn length(&self) -> T {
+        self.sqr_length().sqrt()
+    }
+
+    fn sqr_length(&self) -> T {
+        self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
     }
 }
 
-impl<T> Vec3View<T> for Vec3<T> where T: Copy {
+impl<T> Vec3View<T> for Vec3<T> where T: num_traits::Float {
 
     fn x(&self) -> T {
         self.0
@@ -93,7 +99,7 @@ impl<T> Vec3View<T> for Vec3<T> where T: Copy {
     }
 }
 
-impl<T> Vec3View<T> for Vec3Norm<T> where T: Copy {
+impl<T> Vec3View<T> for Vec3Norm<T> where T: num_traits::Float {
 
     fn x(&self) -> T {
         self.0.x()
@@ -110,7 +116,7 @@ impl<T> Vec3View<T> for Vec3Norm<T> where T: Copy {
 
 macro_rules! operators_impl {
     ($($t:ty)*) => ($(
-        impl<T,S> Mul<S> for $t where Self: Vec3View<T>, S: Copy, T: Mul<S, Output=T> {
+        impl<T,S> Mul<S> for $t where Self: Vec3View<T>, S: Copy, T: num_traits::Float + Mul<S, Output=T> {
 
             type Output = Vec3<T>;
 
@@ -120,7 +126,7 @@ macro_rules! operators_impl {
 
         }
 
-       impl<T,S> Div<S> for $t where Self: Vec3View<T>, S: Copy, T: Div<S, Output=T> + num_traits::One + Copy {
+       impl<T,S> Div<S> for $t where Self: Vec3View<T>, S: Copy, T: Div<S, Output=T> + num_traits::Float {
 
             type Output = Vec3<T>;
 
@@ -130,7 +136,7 @@ macro_rules! operators_impl {
 
         }
 
-        impl<T,R> Add<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: Add<Output=T> {
+        impl<T,R> Add<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: num_traits::Float {
 
             type Output = Vec3<T>;
 
@@ -142,7 +148,7 @@ macro_rules! operators_impl {
             }
         }
 
-        impl<T,R> Sub<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: Sub<Output=T> {
+        impl<T,R> Sub<R> for $t where Self: Vec3View<T>, R: Vec3View<T>, T: num_traits::Float {
 
             type Output = Vec3<T>;
 
