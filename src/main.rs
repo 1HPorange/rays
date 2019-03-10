@@ -4,6 +4,7 @@ mod geometry;
 mod color;
 mod output;
 mod camera;
+mod scene;
 
 use vec3::*;
 
@@ -43,10 +44,23 @@ fn save_to_file() {
 
 fn add_geometry() {
 
-    let v1 = Vec3(2.0, 3.0, 4.0);
-    let v2 = Vec3::normalized(1.0, 0.0, 0.0);
+    let sphere = geometry::Sphere { 
+        center: Vec3(0.0,0.0,5.0),
+        radius: 3.0
+    };
 
-    dbg!(v1.normalize() / 2.0);
+    let scene = scene::Scene {
+        geometry: vec![Box::new(sphere)]
+    };
+
+    let camera: camera::Camera<f64> = camera::Camera::default();
+
+    let mut render_target = output::RenderTarget::new(60 * 16, 60 * 9);
+
+    raytracing::render(&scene, &camera, &mut render_target);
+
+    render_target.save_as_ppm("D:/Downloads/weirdo.ppm")
+    .expect("Could not write to output file");
 
     std::process::exit(0)
 }

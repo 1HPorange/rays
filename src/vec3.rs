@@ -11,23 +11,23 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3Norm<T>(Vec3<T>);
 
-impl<T> Vec3<T> {
+impl<T> Vec3<T> where T: num_traits::Float {
 
-    pub fn zero() -> Vec3<T> where T: num_traits::Zero {
+    pub fn zero() -> Vec3<T> {
         Vec3(T::zero(), T::zero(), T::zero())
     } 
 
-    pub fn is_zero(&self) -> bool where T: num_traits::Zero + PartialEq {
+    pub fn is_zero(&self) -> bool {
         self.0 == T::zero() &&
         self.1 == T::zero() &&
         self.2 == T::zero()
     }
 
-    pub fn is_unit_length(&self) -> bool where T: num_traits::One + num_traits::Float {
+    pub fn is_unit_length(&self) -> bool {
         self.length() == T::one()
     }
 
-    pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> where T: PartialEq + num_traits::Float + num_traits::One + std::fmt::Debug {
+    pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> {
 
         let v = Vec3(x, y, z);
 
@@ -36,14 +36,14 @@ impl<T> Vec3<T> {
         Vec3Norm(v)
     }
 
-    pub fn normalize(self) -> Vec3Norm<T> where Self: Vec3View<T>, T: num_traits::Zero + PartialEq + num_traits::Float {
+    pub fn normalize(self) -> Vec3Norm<T> {
 
         assert!(!self.is_zero(), "Cannot normalize zero length vector");
 
         Vec3Norm(self / self.length())
     }
 
-    pub fn into_normalized(self) -> Vec3Norm<T> where T: num_traits::Float {
+    pub fn into_normalized(self) -> Vec3Norm<T> {
 
         assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");
 
@@ -52,7 +52,7 @@ impl<T> Vec3<T> {
 }
 
 // This trait is there to grant/force read-only access to the fields of a vector
-pub trait Vec3View<T>: Copy {
+pub trait Vec3View<T> {
     fn x(&self) -> T;
     fn y(&self) -> T;
     fn z(&self) -> T;

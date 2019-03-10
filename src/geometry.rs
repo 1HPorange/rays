@@ -1,18 +1,15 @@
-use std::ops::*;
-
 use super::vec3::*;
 use super::raytracing::*;
 
-struct Sphere<T> {
+pub struct Sphere<T> {
 
-    center: Vec3<T>,
-    radius: T
+    pub center: Vec3<T>,
+    pub radius: T
 
 }
 
 impl<T> RayTarget<T> for Sphere<T> where 
-T: Sub<Output=T> + Mul<Output=T> + Add<Output=T> + Copy + PartialOrd + num_traits::Zero + num_traits::Float, 
-Vec3<T>: Sub<Output=Vec3<T>> + Vec3View<T> {
+    T: num_traits::Float, Vec3<T>: Vec3View<T> {
 
     fn test_intersection(&self, ray: &Ray<T>) -> Option<RayHitInfo> {
         
