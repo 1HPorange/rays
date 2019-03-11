@@ -83,6 +83,10 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.0 = old.0 * deg.cos() - old.1 * deg.sin();
         self.1 = old.0 * deg.sin() + old.1 * deg.cos();
     }
+
+    pub fn reflect(&self, normal: Vec3Norm<T>) -> Vec3<T> {
+        *self - normal * (self.dot(normal)) * T::from(2.0).unwrap()
+    }
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
@@ -154,6 +158,18 @@ impl<T> Vec3View<T> for Vec3Norm<T> where T: num_traits::Float {
     fn z(&self) -> T {
         self.0.z()
     }
+}
+
+impl<T> From<Vec3Norm<T>> for Vec3<T> where Vec3Norm<T>: Vec3View<T>, T: num_traits::Float {
+
+    fn from(v: Vec3Norm<T>) -> Vec3<T> {
+        Vec3(
+            v.0.x(),
+            v.0.y(),
+            v.0.z()
+        )
+    }
+
 }
 
 macro_rules! operators_impl {

@@ -124,13 +124,13 @@ fn raytrace_recursive<T>(params: &RaytraceParameters<T>, ray: Ray<T>, bounces: i
 
         let mat = mat_provider.get_material_at(&hit);
 
-        hit_object(params, mat, &hit, bounces, intensity)
+        hit_object(params, mat, &hit, &ray, bounces, intensity)
     } else {
         hit_skybox(&ray)
     }
 }
 
-fn hit_object<T>(params: &RaytraceParameters<T>, mat: &Material, hit: &GeometryHitInfo<T>, bounces: i32, intensity: f32) -> RGBColor
+fn hit_object<T>(params: &RaytraceParameters<T>, mat: &Material, hit: &GeometryHitInfo<T>, ray: &Ray<T>, bounces: i32, intensity: f32) -> RGBColor
     where T: num_traits::Float {
     
     let mut output = RGBColor::BLACK;
@@ -161,7 +161,7 @@ fn hit_object<T>(params: &RaytraceParameters<T>, mat: &Material, hit: &GeometryH
             output += raytrace_recursive(params, 
                 Ray {
                     origin: hit.position,
-                    direction: hit.normal // TODO: Correct this direction! it is actually not the normal, but the reflected incoming ray!
+                    direction: Vec3::from(ray.direction).reflect(hit.normal).into_normalized()
                 }, bounces + 1, reflection_intensity) * reflection_intensity;
 
         } else {

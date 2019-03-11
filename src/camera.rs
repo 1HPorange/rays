@@ -38,11 +38,11 @@ impl<T> Camera<T> where T: num_traits::Float{
         Camera {
             position: Vec3(
                 T::zero(),
-                T::from(5.0).unwrap(),
-                T::zero()
+                T::from(10.0).unwrap(),
+                T::from(-10.0).unwrap()
             ),
             orientation: Orientation { 
-                x: T::from(36.0).unwrap(),
+                x: T::from(25.0).unwrap(),
                 y: T::zero(),
                 z: T::zero()
             },

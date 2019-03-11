@@ -54,7 +54,7 @@ fn add_geometry() {
             r: 1.0,
             g: 0.5,
             b: 0.0
-        }, 0.15, 1.0)))
+        }, 0.25, 1.0)))
     };
 
     let chrome_big = geometry::Sphere { 
