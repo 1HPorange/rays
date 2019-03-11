@@ -19,6 +19,10 @@ impl<T> Vec3<T> where T: num_traits::Float {
         Vec3(T::zero(), T::zero(), T::zero())
     } 
 
+    pub fn one() -> Vec3<T> {
+        Vec3(T::one(), T::one(), T::one())
+    } 
+
     pub fn is_zero(&self) -> bool {
         self.0 == T::zero() &&
         self.1 == T::zero() &&

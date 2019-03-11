@@ -1,7 +1,8 @@
 use super::vec3::*;
 use super::raytracing::*;
 use super::material::*;
-use super::color::*;
+
+// Sphere
 
 pub struct Sphere<T> {
 
@@ -14,7 +15,7 @@ pub struct Sphere<T> {
 impl<T> RayTarget<T> for Sphere<T> where 
     T: num_traits::Float, Vec3<T>: Vec3View<T> {
 
-    fn test_intersection(&self, ray: &Ray<T>) -> Option<RayHitInfo<T>> {
+    fn test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>> {
         
         // Squared radius
         let rad_sqr = self.radius * self.radius;
@@ -51,7 +52,7 @@ impl<T> RayTarget<T> for Sphere<T> where
         let hitpoint = ray.origin + ray.direction * (dist_proj_len - midpoint_to_surface);
         let normal = ((hitpoint - self.center) / self.radius).into_normalized();
 
-        Option::Some(RayHitInfo {
+        Option::Some(GeometryHitInfo {
             position: hitpoint,
             normal
         })

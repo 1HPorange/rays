@@ -48,33 +48,33 @@ fn save_to_file() {
 fn add_geometry() {
 
     let orange = geometry::Sphere { 
-        center: Vec3(0.0,0.0,5.0),
+        center: Vec3(0.0,1.0,5.0),
         radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::perfect_diffuse(RGBColor {
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 1.0,
             g: 0.5,
             b: 0.0
-        })))
+        }, 0.75, 1.0)))
     };
 
     let turqoise = geometry::Sphere { 
-        center: Vec3(4.0,0.0,8.0),
+        center: Vec3(4.0,-2.0,8.0),
         radius: 2.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::perfect_diffuse(RGBColor {
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 0.0,
             g: 1.0,
-            b: 0.5
-        })))
+            b: 0.7
+        }, 0.25, 1.0)))
     };
 
     let purple = geometry::Sphere { 
-        center: Vec3(-3.0,0.0,7.0),
+        center: Vec3(-5.0,0.0,10.0),
         radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::perfect_diffuse(RGBColor {
-            r: 1.0,
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
+            r: 0.5,
             g: 0.0,
-            b: 0.5
-        })))
+            b: 1.0
+        }, 0.5, 2.0)))
     };
 
     let scene = scene::Scene {
@@ -85,7 +85,7 @@ fn add_geometry() {
 
     let mut render_target = output::RenderTarget::new(60 * 16, 60 * 9);
 
-    let render_params = raytracing::RenderingParameters { max_bounces: 2, max_rays: 10 };
+    let render_params = raytracing::RenderingParameters { min_intensity: 0.05, max_bounces: 1, max_rays: 10 };
 
     raytracing::render::<f64>(&scene, &camera, &mut render_target, &render_params);
 

@@ -2,20 +2,30 @@ use super::color::*;
 use super::raytracing::*;
 
 pub struct Material {
-    pub color: RGBAColor, // alpha determines how many rays pass through the material
-    pub reflectivity: f32, // 0: many rays will bounce off in every direction, 1: single ray does a perfect reflective bounce
-    pub intensity: f32, // 0-1: ratio of how much the color of the material influences output vs. the color of the reflected rays
-    pub refraction_index: f32 // only has an effect when alpha < 1
+    pub color: RGBAColor, // alpha determines how many rays pass through the material and are potentially refracted
+
+    pub reflection: RaySpreadInfo,
+    pub refraction: RaySpreadInfo,
+
+    pub last_bounce_color: RGBColor
+}
+
+pub struct RaySpreadInfo {
+    pub intensity: f32,
+    pub max_angle: f32,
+    pub edge_multiplier: f32
 }
 
 impl Material {
 
-    pub fn perfect_diffuse(col: RGBColor) -> Material {
+    pub fn opaque_reflective(col: RGBColor, reflectiveness: f32, edge_reflection_multiplier: f32) -> Material {
         Material {
             color: col.into(),
-            reflectivity: 0.0,
-            intensity: 1.0,
-            refraction_index: 0.0
+
+            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: 0.0, edge_multiplier: edge_reflection_multiplier },
+            refraction: RaySpreadInfo { intensity: 0.0, max_angle: 90.0, edge_multiplier: 1.0 },
+
+            last_bounce_color: col * (1.0 - reflectiveness)
         }
     }
 
@@ -23,7 +33,7 @@ impl Material {
 
 pub trait HasMaterial<T> {
     
-    fn get_material_at(&self, rch: &RayHitInfo<T>) -> &Material;
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material;
 
 }
 
@@ -39,7 +49,7 @@ pub struct StaticMaterialProvider(pub Material);
 
 impl<T> HasMaterial<T> for StaticMaterialProvider {
 
-    fn get_material_at(&self, rch: &RayHitInfo<T>) -> &Material {
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material {
         &self.0
     }
 

@@ -17,6 +17,7 @@ pub struct RGBAColor {
 
 impl RGBColor {
     pub const BLACK: RGBColor = RGBColor { r: 0.0, g: 0.0, b: 0.0 };
+    pub const PINK: RGBColor = RGBColor { r: 1.0, g: 0.0, b: 1.0 };
 }
 
 impl From<RGBColor> for [u8;3] {
@@ -29,6 +30,56 @@ impl From<RGBColor> for [u8;3] {
             (col.b * 255.0) as u8,
         ]
 
+    }
+
+}
+
+impl<S> std::ops::Mul<S> for RGBColor where f32: std::ops::Mul<S, Output=f32>, S: Copy {
+
+    type Output = RGBColor;
+
+    fn mul(self, rhs: S) -> Self::Output {
+        RGBColor {
+            r: self.r * rhs,
+            g: self.g * rhs,
+            b: self.b * rhs
+        }
+    }
+}
+
+impl<S> std::ops::Div<S> for RGBColor where f32: std::ops::Div<S, Output=f32>, S: Copy {
+
+    type Output = RGBColor;
+
+    fn div(self, rhs: S) -> Self::Output {
+        RGBColor {
+            r: self.r / rhs,
+            g: self.g / rhs,
+            b: self.b / rhs
+        }
+    }
+}
+
+impl std::ops::Add for RGBColor {
+
+    type Output = RGBColor;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        RGBColor {
+            r: self.r + rhs.r,
+            g: self.g + rhs.g,
+            b: self.b + rhs.b
+        }
+    }
+
+}
+
+impl std::ops::AddAssign for RGBColor {
+
+    fn add_assign(&mut self, other: RGBColor) {
+        self.r += other.r;
+        self.g += other.g;
+        self.b += other.b;
     }
 
 }
