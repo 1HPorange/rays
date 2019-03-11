@@ -83,10 +83,6 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.0 = old.0 * deg.cos() - old.1 * deg.sin();
         self.1 = old.0 * deg.sin() + old.1 * deg.cos();
     }
-
-    pub fn reflect(&self, normal: Vec3Norm<T>) -> Vec3<T> {
-        *self - normal * (self.dot(normal)) * T::from(2.0).unwrap()
-    }
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
@@ -127,6 +123,10 @@ pub trait Vec3View<T>: Sized where T: num_traits::Float {
 
     fn sqr_length(&self) -> T {
         self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
+    }
+
+    fn reflect(&self, normal: Vec3Norm<T>) -> Vec3<T> where Self: Sub<Vec3<T>, Output=Vec3<T>> + Copy {
+        *self - normal * (self.dot(normal)) * T::from(2.0).unwrap()
     }
 }
 

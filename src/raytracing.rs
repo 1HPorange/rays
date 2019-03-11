@@ -161,7 +161,7 @@ fn hit_object<T>(params: &RaytraceParameters<T>, mat: &Material, hit: &GeometryH
             output += raytrace_recursive(params, 
                 Ray {
                     origin: hit.position,
-                    direction: Vec3::from(ray.direction).reflect(hit.normal).into_normalized()
+                    direction: ray.direction.reflect(hit.normal).into_normalized()
                 }, bounces + 1, reflection_intensity) * reflection_intensity;
 
         } else {
