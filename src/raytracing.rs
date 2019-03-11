@@ -38,36 +38,67 @@ struct RaytraceParameters<'a, T> {
 }
 
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
-    T: num_traits::Float + Copy {
+    T: num_traits::Float {
 
     // TODO: Replace this with something properly respecting camera parameters
 
-    // Distances between 2 pixels
-    let x_step = camera.viewport.width / (T::from(render_target.width).unwrap());
-    let x_start = (x_step - camera.viewport.width) / T::from(2.0).unwrap();
+    let raytrace_params = RaytraceParameters {
+        scene,
+        render_params
+    };
 
-    let y_step = -camera.viewport.height / (T::from(render_target.height).unwrap());
-    let y_start = (camera.viewport.height - y_step) / T::from(2.0).unwrap();
+    // Some reusable stuff
+    let w = T::from(render_target.width).unwrap();
+    let h = T::from(render_target.height).unwrap();
+    let const2 = T::from(2.0).unwrap();
+
+    // Distances between 2 pixels
+    let x_step = camera.viewport.width / w;
+    let x_start = (x_step - camera.viewport.width) / const2;
+
+    let y_step = -camera.viewport.height / h;
+    let y_start = (camera.viewport.height - y_step) / const2;
+
+    // Angle distances between two pixels
+    let fov_vertical = camera.fov_horizontal / camera.viewport.aspect();
+
+    let x_angle_step = camera.fov_horizontal / w;
+    let x_angle_start = (x_angle_step - camera.fov_horizontal) / const2;
+
+    let y_angle_step = fov_vertical / h;
+    let y_angle_start = (y_angle_step - fov_vertical) / const2;
 
     for y_ind in 0..render_target.height {
 
-        let wtf_rust_y: T = T::from(y_ind).unwrap();
-        let vp_y = y_start + wtf_rust_y * y_step;
+        let y_t = T::from(y_ind).unwrap();
+        let vp_y = y_start + y_t * y_step;
+        let angle_y = y_angle_start + y_t * y_angle_step;
 
         for x_ind in 0..render_target.width {
 
-            let wtf_rust_x: T = T::from(x_ind).unwrap();
-            let vp_x = x_start + wtf_rust_x * x_step;
+            let x_t = T::from(x_ind).unwrap();
+            let vp_x = x_start + x_t * x_step;
+            let angle_x = x_angle_start + x_t * x_angle_step;
             
+            let mut origin = Vec3(vp_x, vp_y, T::zero());
+            origin.rotateX(camera.orientation.x);
+            origin.rotateY(camera.orientation.y);
+            origin.rotateZ(camera.orientation.z);
+
+            origin += camera.position;
+
+            let mut direction = Vec3(T::zero(), T::zero(), T::one());
+            direction.rotateY(angle_x);
+            direction.rotateX(angle_y);
+
+            direction.rotateX(camera.orientation.x);
+            direction.rotateY(camera.orientation.y);
+            direction.rotateZ(camera.orientation.z);
+
+
             let color = raytrace_recursive(
-                &RaytraceParameters {
-                    scene,
-                    render_params
-                },
-                Ray {
-                    origin: Vec3(vp_x, vp_y, T::zero()), // TODO: Respect camera position and orientation
-                    direction: Vec3::normalized(T::zero(), T::zero(), T::one())
-                }, 
+                &raytrace_params,
+                Ray { origin, direction: direction.into_normalized() }, 
                 0, 1.0);
 
             render_target.set_pixel(x_ind, y_ind, color);
@@ -160,7 +191,7 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
 
     let t = -(ray.origin.y() + T::from(10.0).unwrap()) / ray.direction.y();
 
-    let dumb = (ray.origin + ray.direction * t) * T::from(0.2).unwrap();
+    let dumb = (ray.origin + ray.direction * t) * T::from(0.2).unwrap() + Vec3::one() * T::from(1000.0).unwrap();
 
     let x: i32 = num_traits::NumCast::from(dumb.x()).unwrap();
     let z: i32 = num_traits::NumCast::from(dumb.z()).unwrap();
@@ -169,7 +200,7 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     let b = z & 1 == 0;
 
     if a != b {
-        RGBColor::PINK
+        RGBColor::WHITE
     } else {
         RGBColor::BLACK
     }

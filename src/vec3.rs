@@ -1,9 +1,6 @@
 extern crate num_traits;
 
-use std::ops::Add;
-use std::ops::Sub;
-use std::ops::Mul;
-use std::ops::Div;
+use std::ops::*;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3<T>(pub T, pub T, pub T);
@@ -12,6 +9,7 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 pub struct Vec3Norm<T>(Vec3<T>);
 
 const EPSILON: f32 = 0.00001;
+const DEG_2_RAD: f64 = 0.01745329252;
 
 impl<T> Vec3<T> where T: num_traits::Float {
 
@@ -55,23 +53,63 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
         Vec3Norm(self)
     }
+
+    pub fn rotateX(&mut self, mut deg: T) {
+
+        deg = deg * T::from(DEG_2_RAD).unwrap();
+
+        let old = *self;
+
+        self.1 = old.1 * deg.cos() - old.2 * deg.sin();
+        self.2 = old.1 * deg.sin() + old.2 * deg.cos();
+    }
+
+    pub fn rotateY(&mut self, mut deg: T) {
+
+        deg = deg * T::from(DEG_2_RAD).unwrap();
+
+        let old = *self;
+
+        self.0 = old.0 * deg.cos() + old.2 * deg.sin();
+        self.2 = -old.0 * deg.sin() + old.2 * deg.cos();
+    }
+
+    pub fn rotateZ(&mut self, mut deg: T) {
+
+        deg = deg * T::from(DEG_2_RAD).unwrap();
+
+        let old = *self;
+
+        self.0 = old.0 * deg.cos() - old.1 * deg.sin();
+        self.1 = old.0 * deg.sin() + old.1 * deg.cos();
+    }
+}
+
+impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
+
+    fn add_assign(&mut self, other: R) {
+        self.0 = self.0 + other.x();
+        self.1 = self.1 + other.y();
+        self.2 = self.2 + other.z();
+    }
+
 }
 
 // This trait is there to grant/force read-only access to the fields of a vector
-pub trait Vec3View<T> where T: num_traits::Float {
+pub trait Vec3View<T>: Sized where T: num_traits::Float {
     fn x(&self) -> T;
     fn y(&self) -> T;
     fn z(&self) -> T;
 
-    fn scale<S>(self, scalar: S) -> Vec3<T> where T: Mul<S, Output=T>, S: Copy, Self: Sized {
+    fn scale<S>(self, scalar: S) -> Vec3<T> where T: Mul<S, Output=T>, S: Copy {
         Vec3(self.x() * scalar, self.y() * scalar, self.z() * scalar)
     }
 
-    fn dot<R>(self, rhs: R) -> T where R: Vec3View<T>, Self: Sized {
+    fn dot<R>(self, rhs: R) -> T where R: Vec3View<T> {
         self.x() * rhs.x() + self.y() * rhs.y() + self.z() * rhs.z()
     }
 
-    fn cross<R>(self, rhs: R) -> Vec3<T> where R: Vec3View<T>, Self: Sized {
+    fn cross<R>(self, rhs: R) -> Vec3<T> where R: Vec3View<T> {
         Vec3(
             self.y() * rhs.z() - self.z() * rhs.y(),
             self.z() * rhs.x() - self.x() * rhs.z(),

@@ -48,23 +48,23 @@ fn save_to_file() {
 fn add_geometry() {
 
     let orange = geometry::Sphere { 
-        center: Vec3(0.0,1.0,5.0),
+        center: Vec3(0.0,-1.0,5.0),
         radius: 3.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 1.0,
             g: 0.5,
             b: 0.0
-        }, 0.75, 1.0)))
+        }, 0.15, 1.0)))
     };
 
-    let turqoise = geometry::Sphere { 
-        center: Vec3(4.0,-2.0,8.0),
-        radius: 2.0,
+    let chrome_big = geometry::Sphere { 
+        center: Vec3(2.5,3.0,12.0),
+        radius: 5.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 0.0,
-            g: 1.0,
-            b: 0.7
-        }, 0.25, 1.0)))
+            g: 0.5,
+            b: 1.0
+        }, 0.8, 1.0)))
     };
 
     let purple = geometry::Sphere { 
@@ -78,19 +78,19 @@ fn add_geometry() {
     };
 
     let scene = scene::Scene {
-        objects: vec![Box::new(orange), Box::new(turqoise), Box::new(purple)]
+        objects: vec![Box::new(orange), Box::new(chrome_big), Box::new(purple)]
     };
 
     let camera: camera::Camera<f64> = camera::Camera::default();
 
     let mut render_target = output::RenderTarget::new(60 * 16, 60 * 9);
 
-    let render_params = raytracing::RenderingParameters { min_intensity: 0.05, max_bounces: 1, max_rays: 10 };
+    let render_params = raytracing::RenderingParameters { min_intensity: 0.05, max_bounces: 3, max_rays: 10 };
 
     raytracing::render::<f64>(&scene, &camera, &mut render_target, &render_params);
 
     render_target.save_as_ppm("D:/Downloads/weirdo.ppm")
-    .expect("Could not write to output file");
+        .expect("Could not write to output file");
 
     std::process::exit(0)
 }
