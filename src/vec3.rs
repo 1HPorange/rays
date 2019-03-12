@@ -28,7 +28,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
     }
 
     pub fn is_unit_length(&self) -> bool {
-        (self.length() - T::one()).abs() < T::from(EPSILON).unwrap()
+        (self.sqr_length() - T::one()).abs() < T::from(EPSILON).unwrap()
     }
 
     pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> {

@@ -43,7 +43,7 @@ impl RenderTarget {
         bytes.extend_from_slice(self.height.to_string().as_bytes());
         bytes.extend_from_slice(&[
             32, // space
-            50, 53, 53, // Make color value TODO: Figure out whhat this is
+            50, 53, 53, // Max color value. 255 (ASCII) for normal pictures
             10 // newline
         ]);
         bytes.extend(self.data.iter().flat_map(|&col| {
