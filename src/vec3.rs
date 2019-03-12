@@ -54,7 +54,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
         Vec3Norm(self)
     }
 
-    pub fn rotateX(&mut self, mut deg: T) {
+    pub fn rotate_x(&mut self, mut deg: T) {
 
         deg = deg * T::from(DEG_2_RAD).unwrap();
 
@@ -64,7 +64,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.2 = old.1 * deg.sin() + old.2 * deg.cos();
     }
 
-    pub fn rotateY(&mut self, mut deg: T) {
+    pub fn rotate_y(&mut self, mut deg: T) {
 
         deg = deg * T::from(DEG_2_RAD).unwrap();
 
@@ -74,7 +74,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.2 = -old.0 * deg.sin() + old.2 * deg.cos();
     }
 
-    pub fn rotateZ(&mut self, mut deg: T) {
+    pub fn rotate_z(&mut self, mut deg: T) {
 
         deg = deg * T::from(DEG_2_RAD).unwrap();
 

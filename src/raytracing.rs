@@ -81,20 +81,19 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
             let angle_x = x_angle_start + x_t * x_angle_step;
             
             let mut origin = Vec3(vp_x, vp_y, T::zero());
-            origin.rotateX(camera.orientation.x);
-            origin.rotateY(camera.orientation.y);
-            origin.rotateZ(camera.orientation.z);
+            origin.rotate_x(camera.orientation.x);
+            origin.rotate_y(camera.orientation.y);
+            origin.rotate_z(camera.orientation.z);
 
             origin += camera.position;
 
             let mut direction = Vec3(T::zero(), T::zero(), T::one());
-            direction.rotateY(angle_x);
-            direction.rotateX(angle_y);
+            direction.rotate_y(angle_x);
+            direction.rotate_x(angle_y);
 
-            direction.rotateX(camera.orientation.x);
-            direction.rotateY(camera.orientation.y);
-            direction.rotateZ(camera.orientation.z);
-
+            direction.rotate_x(camera.orientation.x);
+            direction.rotate_y(camera.orientation.y);
+            direction.rotate_z(camera.orientation.z);
 
             let color = raytrace_recursive(
                 &raytrace_params,
