@@ -2,6 +2,9 @@ extern crate rand;
 use rand::prelude::*;
 use rand::FromEntropy;
 
+extern crate rayon;
+use rayon::prelude::*;
+
 use super::vec3::*;
 use super::camera::*;
 use super::output::*;
@@ -52,14 +55,12 @@ struct HitInfo<'a, T> {
 }
 
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
-    T: num_traits::Float {
+    T: num_traits::Float + Send + Sync {
 
     let raytrace_params = RaytraceParameters {
         scene,
         render_params
     };
-
-    let mut rng = SmallRng::from_entropy();
 
     // Some reusable stuff
     let w = T::from(render_target.width).unwrap();
@@ -82,13 +83,20 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
     let y_angle_step = fov_vertical / h;
     let y_angle_start = (y_angle_step - fov_vertical) / const2;
 
-    for y_ind in 0..render_target.height {
+    let rt_width = render_target.width;
+    let rt_height = render_target.height;
+
+    let render_target = std::sync::Mutex::new(render_target);
+
+    (0..rt_height).into_par_iter().for_each(|y_ind| {
+
+        let mut rng = SmallRng::from_entropy();
 
         let y_t = T::from(y_ind).unwrap();
         let vp_y = y_start + y_t * y_step;
         let angle_y = y_angle_start + y_t * y_angle_step;
 
-        for x_ind in 0..render_target.width {
+        for x_ind in 0..rt_width {
 
             let x_t = T::from(x_ind).unwrap();
             let vp_x = x_start + x_t * x_step;
@@ -129,9 +137,13 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
                 color
             };
             
-            render_target.set_pixel(x_ind, y_ind, color);
+            {
+                let mut lock = render_target.lock().unwrap();
+
+                lock.set_pixel(x_ind, y_ind, color);
+            }
         }
-    }
+    });
 }
 
 fn get_initial_ray_origin<T>(camera: &Camera<T>, viewport_x: T, viewport_y: T) -> Vec3<T> where T: num_traits::Float {

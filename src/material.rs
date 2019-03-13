@@ -31,7 +31,7 @@ impl<T> Material<T> {
 
 }
 
-pub trait HasMaterial<T> {
+pub trait HasMaterial<T>: Send + Sync {
     
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T>;
 
@@ -47,7 +47,7 @@ pub trait HasMaterialProvider<T> {
 
 pub struct StaticMaterialProvider<T>(pub Material<T>);
 
-impl<T> HasMaterial<T> for StaticMaterialProvider<T> {
+impl<T> HasMaterial<T> for StaticMaterialProvider<T> where Self: Send + Sync {
 
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T> {
         &self.0
