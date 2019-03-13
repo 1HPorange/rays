@@ -90,13 +90,13 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
     (0..rt_height).into_par_iter().for_each(|y_ind| {
 
-        let mut rng = SmallRng::from_entropy();
-
         let y_t = T::from(y_ind).unwrap();
         let vp_y = y_start + y_t * y_step;
         let angle_y = y_angle_start + y_t * y_angle_step;
 
-        for x_ind in 0..rt_width {
+        (0..rt_width).into_par_iter().for_each(|x_ind| {
+
+            let mut rng = SmallRng::from_entropy();
 
             let x_t = T::from(x_ind).unwrap();
             let vp_x = x_start + x_t * x_step;
@@ -142,7 +142,7 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
                 lock.set_pixel(x_ind, y_ind, color);
             }
-        }
+        });
     });
 }
 
@@ -345,8 +345,8 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
 
     let dumb = (ray.origin + ray.direction * t) * T::from(0.2).unwrap() + Vec3::one() * T::from(1000.0).unwrap();
 
-    let x: i32 = num_traits::NumCast::from(dumb.x()).unwrap();
-    let z: i32 = num_traits::NumCast::from(dumb.z()).unwrap();
+    let x: i32 = num_traits::NumCast::from(dumb.x()).unwrap_or(35);
+    let z: i32 = num_traits::NumCast::from(dumb.z()).unwrap_or(42);
 
     let a = x & 1 == 0;
     let b = z & 1 == 0;

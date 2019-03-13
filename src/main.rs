@@ -48,13 +48,13 @@ fn save_to_file() {
 fn add_geometry() {
 
     let orange = geometry::Sphere { 
-        center: Vec3(-1.0, 3.0, 5.0),
+        center: Vec3(-0.2, 3.0, 5.0),
         radius: 3.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 1.0,
             g: 0.5,
             b: 0.0
-        }, 0.25, 1.0)))
+        }, 0.15, 1.0)))
     };
 
     let chrome_big = geometry::Sphere { 
@@ -67,18 +67,18 @@ fn add_geometry() {
         }, 0.8, 1.0)))
     };
 
-    let purple = geometry::Sphere { 
+    let diffuse = geometry::Sphere { 
         center: Vec3(-6.0, 4.0, 10.0),
         radius: 4.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
-            r: 0.5,
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_diffuse(RGBColor {
+            r: 1.0,
             g: 0.0,
-            b: 1.0
-        }, 0.5, 2.0)))
+            b: 0.0
+        }, 0.75)))
     };
 
     let scene = scene::Scene {
-        objects: vec![Box::new(orange), Box::new(chrome_big), Box::new(purple)]
+        objects: vec![Box::new(orange), Box::new(chrome_big), Box::new(diffuse)]
     };
 
     let camera: camera::Camera<f64> = camera::Camera::default();
@@ -88,9 +88,9 @@ fn add_geometry() {
     let render_params = raytracing::RenderingParameters { 
         min_intensity: 0.05, 
         max_bounces: 2, 
-        max_reflect_rays: 20,
+        max_reflect_rays: 10,
         max_refract_rays: 2,
-        max_dof_rays: 20
+        max_dof_rays: 50//2000
     };
 
     raytracing::render::<f64>(&scene, &camera, &mut render_target, &render_params);

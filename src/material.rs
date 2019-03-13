@@ -5,9 +5,7 @@ pub struct Material<T> {
     pub color: RGBAColor, // alpha determines how many rays pass through the material and are potentially refracted
 
     pub reflection: RaySpreadInfo<T>,
-    pub refraction: RaySpreadInfo<T>,
-
-    pub last_bounce_color: RGBColor
+    pub refraction: RaySpreadInfo<T>
 }
 
 pub struct RaySpreadInfo<T> {
@@ -22,10 +20,17 @@ impl<T> Material<T> {
         Material {
             color: col.into(),
 
-            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: T::from(5.0).unwrap(), edge_multiplier: edge_reflection_multiplier },
-            refraction: RaySpreadInfo { intensity: 0.0, max_angle: T::zero(), edge_multiplier: 1.0 },
+            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: T::zero(), edge_multiplier: edge_reflection_multiplier },
+            refraction: RaySpreadInfo { intensity: 0.0, max_angle: T::zero(), edge_multiplier: 1.0 }
+        }
+    }
 
-            last_bounce_color: col * (1.0 - reflectiveness)
+    pub fn opaque_diffuse(col: RGBColor, gi_influence: f32) -> Material<T> where T: num_traits::Float {
+        Material {
+            color: col.into(),
+
+            reflection: RaySpreadInfo { intensity: gi_influence, max_angle: T::from(90.0).unwrap(), edge_multiplier: 1.0 },
+            refraction: RaySpreadInfo { intensity: 0.0, max_angle: T::zero(), edge_multiplier: 1.0 }
         }
     }
 
