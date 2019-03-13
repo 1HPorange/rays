@@ -8,8 +8,8 @@ pub struct Camera<T> {
     pub position: Vec3<T>,
     pub orientation: Orientation<T>,
     pub viewport: ViewPort<T>,
-    pub fov_horizontal: T // in degrees TODO: BOUND CHECK TODO: Respect
-    // TODO: DoF
+    pub fov_horizontal: T,
+    pub dof_angle: T
 }
 
 pub struct ViewPort<T> {
@@ -47,10 +47,11 @@ impl<T> Camera<T> where T: num_traits::Float{
                 z: T::zero()
             },
             viewport: ViewPort {
-                width: NumCast::from(16.0).unwrap(),
-                height: NumCast::from(9.0).unwrap()
+                width: T::from(16.0).unwrap(),
+                height: T::from(9.0).unwrap()
             },
-            fov_horizontal: NumCast::from(60.0).unwrap()
+            fov_horizontal: NumCast::from(60.0).unwrap(),
+            dof_angle: T::from(0.5).unwrap()
         }
 
     }

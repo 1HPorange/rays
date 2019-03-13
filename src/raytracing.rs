@@ -33,7 +33,8 @@ pub struct RenderingParameters {
     pub min_intensity: f32,
     pub max_bounces: i32,
     pub max_reflect_rays: i32,
-    pub max_refract_rays: i32
+    pub max_refract_rays: i32,
+    pub max_dof_rays: i32
 }
 
 // Convenience structs so we don't need to pass around so much stuff
@@ -52,8 +53,6 @@ struct HitInfo<'a, T> {
 
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
     T: num_traits::Float {
-
-    // TODO: Replace this with something properly respecting ALL camera parameters
 
     let raytrace_params = RaytraceParameters {
         scene,
@@ -95,30 +94,84 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
             let vp_x = x_start + x_t * x_step;
             let angle_x = x_angle_start + x_t * x_angle_step;
             
-            let mut origin = Vec3(vp_x, vp_y, T::zero());
-            origin.rotate_x(camera.orientation.x);
-            origin.rotate_y(camera.orientation.y);
-            origin.rotate_z(camera.orientation.z);
+            let origin = get_initial_ray_origin(camera, vp_x, vp_y);
 
-            origin += camera.position;
+            // We render just a single ray if DoF is disabled
+            let color = if camera.dof_angle.is_zero() {
 
-            let mut direction = Vec3(T::zero(), T::zero(), T::one());
-            direction.rotate_y(angle_x);
-            direction.rotate_x(angle_y);
+                let direction = get_initial_randomized_ray_direction(camera, &mut rng, angle_x, angle_y);
 
-            direction.rotate_x(camera.orientation.x);
-            direction.rotate_y(camera.orientation.y);
-            direction.rotate_z(camera.orientation.z);
+                raytrace_recursive(
+                    &raytrace_params,
+                    &mut rng,
+                    Ray { origin, direction }, 
+                    0, 1.0)
 
-            let color = raytrace_recursive(
-                &raytrace_params,
-                &mut rng,
-                Ray { origin, direction: direction.into_normalized() }, 
-                0, 1.0);
+            } else {
 
+                let mut color = RGBColor::BLACK;
+
+                let ray_influence = 1.0 / (render_params.max_dof_rays as f32);
+
+                for _ in 0..render_params.max_dof_rays {
+
+                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, angle_x, angle_y);
+
+                    color += raytrace_recursive(
+                        &raytrace_params,
+                        &mut rng,
+                        Ray { origin, direction }, 
+                        0, 1.0)
+                    * ray_influence;
+
+                }
+
+                color
+            };
+            
             render_target.set_pixel(x_ind, y_ind, color);
         }
     }
+}
+
+fn get_initial_ray_origin<T>(camera: &Camera<T>, viewport_x: T, viewport_y: T) -> Vec3<T> where T: num_traits::Float {
+
+    let mut origin = Vec3(viewport_x, viewport_y, T::zero());
+    origin.rotate_x(camera.orientation.x);
+    origin.rotate_y(camera.orientation.y);
+    origin.rotate_z(camera.orientation.z);
+
+    origin += camera.position;
+
+    origin
+}
+
+fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, fov_angle_x: T, fov_angle_y: T) -> Vec3Norm<T> where 
+    T: num_traits::Float,
+    R: Rng + ?Sized {
+
+    let mut direction = Vec3(T::zero(), T::zero(), T::one());
+
+    // Randomization for DoF
+    if !camera.dof_angle.is_zero() {
+
+        let dof_rx: T = T::from(rng.gen::<f64>()).unwrap() * camera.dof_angle;
+        let dof_rz: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
+        direction.rotate_x(dof_rx);
+        direction.rotate_z(dof_rz);
+
+    }
+
+    // Fov Influence
+    direction.rotate_y(fov_angle_x);
+    direction.rotate_x(fov_angle_y);
+
+    // Camera orientation influence
+    direction.rotate_x(camera.orientation.x);
+    direction.rotate_y(camera.orientation.y);
+    direction.rotate_z(camera.orientation.z);
+
+    direction.into_normalized()
 }
 
 fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: f32) -> RGBColor where 

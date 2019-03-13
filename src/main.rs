@@ -88,8 +88,9 @@ fn add_geometry() {
     let render_params = raytracing::RenderingParameters { 
         min_intensity: 0.05, 
         max_bounces: 2, 
-        max_reflect_rays: 50,
-        max_refract_rays: 2
+        max_reflect_rays: 20,
+        max_refract_rays: 2,
+        max_dof_rays: 20
     };
 
     raytracing::render::<f64>(&scene, &camera, &mut render_target, &render_params);
