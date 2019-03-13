@@ -19,6 +19,7 @@ impl RGBColor {
     pub const BLACK: RGBColor = RGBColor { r: 0.0, g: 0.0, b: 0.0 };
     pub const PINK: RGBColor = RGBColor { r: 1.0, g: 0.0, b: 1.0 };
     pub const WHITE: RGBColor = RGBColor { r: 1.0, g: 1.0, b: 1.0 };
+    pub const EVENING_BLUE: RGBColor = RGBColor { r: 0.090, g: 0.160, b: 0.368 };
 }
 
 impl From<RGBColor> for [u8;3] {

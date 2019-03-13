@@ -265,13 +265,18 @@ fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, ma
 
 fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     
-    // Dumbass implementation that makes the floor a checkerboard and the sky black TODO:
+    // Dumbass implementation that makes the floor a checkerboard and the sky a gradient
 
     if ray.direction.y() >= T::zero() {
-        return RGBColor::BLACK
+
+        let mut t: f32 = num_traits::NumCast::from(ray.direction.y()).unwrap();
+        t *= 2.0;
+        t = t.min(1.0);
+
+        return RGBColor::EVENING_BLUE * (1.0 - t) + RGBColor::BLACK * t
     }
 
-    let t = -(ray.origin.y() + T::from(10.0).unwrap()) / ray.direction.y();
+    let t = -ray.origin.y() / ray.direction.y();
 
     let dumb = (ray.origin + ray.direction * t) * T::from(0.2).unwrap() + Vec3::one() * T::from(1000.0).unwrap();
 

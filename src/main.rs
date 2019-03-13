@@ -48,7 +48,7 @@ fn save_to_file() {
 fn add_geometry() {
 
     let orange = geometry::Sphere { 
-        center: Vec3(0.0,-1.0,5.0),
+        center: Vec3(-1.0, 3.0, 5.0),
         radius: 3.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 1.0,
@@ -58,8 +58,8 @@ fn add_geometry() {
     };
 
     let chrome_big = geometry::Sphere { 
-        center: Vec3(2.5,3.0,12.0),
-        radius: 5.0,
+        center: Vec3(4.0, 7.0, 14.0),
+        radius: 7.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 0.0,
             g: 0.5,
@@ -68,8 +68,8 @@ fn add_geometry() {
     };
 
     let purple = geometry::Sphere { 
-        center: Vec3(-5.0,0.0,10.0),
-        radius: 3.0,
+        center: Vec3(-6.0, 4.0, 10.0),
+        radius: 4.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 0.5,
             g: 0.0,
@@ -88,7 +88,7 @@ fn add_geometry() {
     let render_params = raytracing::RenderingParameters { 
         min_intensity: 0.05, 
         max_bounces: 2, 
-        max_reflect_rays: 100,
+        max_reflect_rays: 50,
         max_refract_rays: 2
     };
 
