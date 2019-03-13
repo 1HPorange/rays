@@ -22,7 +22,7 @@ impl<T> Material<T> {
         Material {
             color: col.into(),
 
-            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: T::from(90.0).unwrap(), edge_multiplier: edge_reflection_multiplier },
+            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: T::from(30.0).unwrap(), edge_multiplier: edge_reflection_multiplier },
             refraction: RaySpreadInfo { intensity: 0.0, max_angle: T::zero(), edge_multiplier: 1.0 },
 
             last_bounce_color: col * (1.0 - reflectiveness)

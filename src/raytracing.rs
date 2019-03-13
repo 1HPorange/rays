@@ -1,3 +1,7 @@
+extern crate rand;
+use rand::prelude::*;
+use rand::FromEntropy;
+
 use super::vec3::*;
 use super::camera::*;
 use super::output::*;
@@ -49,12 +53,14 @@ struct HitInfo<'a, T> {
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
     T: num_traits::Float {
 
-    // TODO: Replace this with something properly respecting camera parameters
+    // TODO: Replace this with something properly respecting ALL camera parameters
 
     let raytrace_params = RaytraceParameters {
         scene,
         render_params
     };
+
+    let mut rng = SmallRng::from_entropy();
 
     // Some reusable stuff
     let w = T::from(render_target.width).unwrap();
@@ -106,6 +112,7 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
             let color = raytrace_recursive(
                 &raytrace_params,
+                &mut rng,
                 Ray { origin, direction: direction.into_normalized() }, 
                 0, 1.0);
 
@@ -114,9 +121,10 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
     }
 }
 
-fn raytrace_recursive<T>(params: &RaytraceParameters<T>, ray: Ray<T>, bounces: i32, intensity: f32) -> RGBColor where 
+fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: f32) -> RGBColor where 
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
-    T: num_traits::Float {
+    T: num_traits::Float,
+    R: Rng + ?Sized {
 
     let potential_hits = params.scene.objects.iter()
         .map(|obj| (obj, obj.test_intersection(&ray)))
@@ -140,7 +148,7 @@ fn raytrace_recursive<T>(params: &RaytraceParameters<T>, ray: Ray<T>, bounces: i
             intensity
         };
 
-        hit_object(params, &hit_info)
+        hit_object(params, rng, &hit_info)
     } else {
         hit_skybox(&ray)
     }
@@ -159,8 +167,9 @@ fn raytrace_recursive<T>(params: &RaytraceParameters<T>, ray: Ray<T>, bounces: i
 /// 
 ////////////////////////////////////////////////////////////////
 
-fn hit_object<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> RGBColor
-    where T: num_traits::Float {
+fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>) -> RGBColor where 
+    T: num_traits::Float, 
+    R: Rng + ?Sized {
     
     // Calculate intensities of color, reflection and refraction
     let mat_color_intensity = hit_info.intensity * (
@@ -180,7 +189,7 @@ fn hit_object<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> RGBCo
 
     // Add reflective influence to output if the influence threshold is met
     if total_reflection_intensity > params.render_params.min_intensity {     
-        reflect(params, hit_info, total_reflection_intensity, &mut output)
+        reflect(params, rng, hit_info, total_reflection_intensity, &mut output)
     }
 
     // Add refractive influence to output if the influence threshold is met
@@ -191,7 +200,9 @@ fn hit_object<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> RGBCo
     output
 }
 
-fn reflect<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where T: num_traits::Float {
+fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where 
+T: num_traits::Float,
+R: Rng + ?Sized {
 
     // Special case for perfect reflection; We only need to send out a single ray
         if hit_info.mat.reflection.max_angle.is_zero() {
@@ -201,11 +212,11 @@ fn reflect<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>, total_inten
                 direction: hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized()
             };
 
-            *output += raytrace_recursive(params, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
 
         } else {
             
-            let ray_directions = gen_sample_ray_cone(hit_info, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
+            let ray_directions = gen_sample_ray_cone(hit_info, rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
 
             let ray_intensity = total_intensity / (ray_directions.len() as f32);
 
@@ -216,13 +227,15 @@ fn reflect<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>, total_inten
                     direction: dir
                 };
 
-                *output += raytrace_recursive(params, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
+                *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
             }
 
         }
 }
 
-fn gen_sample_ray_cone<T>(hit_info: &HitInfo<T>, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where T: num_traits::Float {
+fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where 
+    T: num_traits::Float,
+    R: Rng + ?Sized {
 
     // TODO: Think about precision issues here
     // TODO: Eliminate f32 from everything that touches a ray!
@@ -231,54 +244,21 @@ fn gen_sample_ray_cone<T>(hit_info: &HitInfo<T>, max_angle: T, max_rays: i32) ->
     let normal = hit_info.hit.normal;
     let reflected = hit_info.ray.direction.reflect(normal).into_normalized();
 
-    // Generate uniform ray directions inside a cone around the 
-    // reflected ray. For this, we use points on a parametric spiral that 
-    // lies on the sufrace of the intersection of the unity sphere with 
-    // the max_angle cone. We also make sure to include the perfectly reflected ray 
-    // in the iterator. The spiral here has 11 windings because thats a prime
-    // and that probably does something very smart.
-
-    let pseudo_rand_rot_angle =
-        hit_info.hit.position.x() * T::from(12824383584.0).unwrap() +
-        hit_info.hit.position.y() * T::from(48238354821.0).unwrap() +
-        hit_info.hit.position.z() * T::from(-53882734353.0).unwrap();
-
-    let max_angle_sin = (max_angle * T::from(DEG_2_RAD).unwrap()).sin();
-
-    let winding_param = T::from(11.0).unwrap() * T::from(TWO_PI).unwrap();
-
     assert!(max_rays > 1); // Avoid div by zero
 
     (0..max_rays)
-        .map(move |ray_index| T::from(ray_index).unwrap() / T::from(max_rays - 1).unwrap() )
-        .map(|mut t| {
+        .map(|_| {
 
-            // This seems to remove a bias for rays to prefer shallow angles TODO: Investigate
-            t = T::one() - (T::one() - t).powf(T::from(2).unwrap());
+            let mut v = Vec3(T::zero(), T::one(), T::zero());
 
-            // Spiral radius scaling factor
-            let ts = t * max_angle_sin;
-
-            // Spiral winding parameter
-            let wp = t * winding_param;
-
-            let vx = ts * wp.cos();
-            let vz = ts * wp.sin();
-
-            let mut vy = (T::one() - vx*vx - vz*vz).sqrt();
-
-            if !vy.is_finite() {
-                vy = T::zero()
-            }
-
-            let mut v = Vec3(vx, vy, vz);
-
-            // To avoid generating patters across pixels, we pseduo-randomly rotate the vector around local-space Y
-            v.rotate_y(pseudo_rand_rot_angle);
+            let rx: T = T::from(rng.gen::<f64>()).unwrap() * max_angle;
+            let ry: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
+            v.rotate_x(rx);
+            v.rotate_y(ry);
 
             v.reorient_y_axis(reflected)
         })
-        //.filter(move |v| v.dot(normal) > T::zero()) // Filter out the ones that penetrate the geometry
+        .filter(move |v| v.dot(normal) > T::zero()) // Filter out the ones that penetrate the geometry
         .map(|v| v.into_normalized())
         .collect::<Vec<_>>()
 }
