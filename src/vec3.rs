@@ -9,7 +9,10 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 pub struct Vec3Norm<T>(Vec3<T>);
 
 const EPSILON: f32 = 0.00001;
-const DEG_2_RAD: f64 = 0.01745329252;
+
+// TODO: Move these constants somewhere smarter
+pub const DEG_2_RAD: f64 = 0.01745329252;
+pub const TWO_PI: f64 = 2.0 * 3.14159265358979323846264338327;
 
 impl<T> Vec3<T> where T: num_traits::Float {
 
@@ -20,12 +23,6 @@ impl<T> Vec3<T> where T: num_traits::Float {
     pub fn one() -> Vec3<T> {
         Vec3(T::one(), T::one(), T::one())
     } 
-
-    pub fn is_zero(&self) -> bool {
-        self.0 == T::zero() &&
-        self.1 == T::zero() &&
-        self.2 == T::zero()
-    }
 
     pub fn is_unit_length(&self) -> bool {
         (self.sqr_length() - T::one()).abs() < T::from(EPSILON).unwrap()
@@ -53,6 +50,8 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
         Vec3Norm(self)
     }
+
+    // TODO: Make these function not mutate self. Then they can move into vecview
 
     pub fn rotate_x(&mut self, mut deg: T) {
 
@@ -96,7 +95,7 @@ impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
 }
 
 // This trait is there to grant/force read-only access to the fields of a vector
-pub trait Vec3View<T>: Sized where T: num_traits::Float {
+pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
     fn x(&self) -> T;
     fn y(&self) -> T;
     fn z(&self) -> T;
@@ -125,8 +124,39 @@ pub trait Vec3View<T>: Sized where T: num_traits::Float {
         self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
     }
 
-    fn reflect(&self, normal: Vec3Norm<T>) -> Vec3<T> where Self: Sub<Vec3<T>, Output=Vec3<T>> + Copy {
+    fn is_zero(&self) -> bool {
+        self.x().is_zero() &&
+        self.y().is_zero() &&
+        self.z().is_zero()
+    }
+
+    fn reflect(&self, normal: Vec3Norm<T>) -> Vec3<T> where Self: Sub<Vec3<T>, Output=Vec3<T>> {
         *self - normal * (self.dot(normal)) * T::from(2.0).unwrap()
+    }
+
+    // Rotates the vector so that the old y axis is rotated into ny
+    // the x and z axis are chosen arbitrarily, but deterministically
+    fn reorient_y_axis<V>(self, ny: V) -> Vec3<T> where V: Vec3View<T> {
+
+        assert!(!ny.is_zero());
+
+        // Calculate other base vectors
+
+        let nx = if !ny.z().is_zero() {
+            Vec3(T::one(), T::one(), -(ny.x() + ny.y())/ny.z() ).normalize()
+        } else if !ny.y().is_zero() {
+            Vec3(T::one(), T::one(), -(ny.x() + ny.z())/ny.y() ).normalize()
+        } else {
+            Vec3(T::one(), T::one(), -(ny.y() + ny.z())/ny.x() ).normalize()
+        };
+
+        let nz = nx.cross(ny);
+
+        Vec3(
+            self.x() * nx.x() + self.y() * ny.x() + self.z() * nz.x(),
+            self.x() * nx.y() + self.y() * ny.y() + self.z() * nz.y(),
+            self.x() * nx.z() + self.y() * ny.z() + self.z() * nz.z()
+        )
     }
 }
 
@@ -174,6 +204,21 @@ impl<T> From<Vec3Norm<T>> for Vec3<T> where Vec3Norm<T>: Vec3View<T>, T: num_tra
 
 macro_rules! operators_impl {
     ($($t:ty)*) => ($(
+
+        impl<T> Neg for $t where Self: Vec3View<T>, T: num_traits::Float {
+
+            type Output = Vec3<T>;
+
+            fn neg(self) -> Self::Output {
+                Vec3(
+                    -self.x(),
+                    -self.y(),
+                    -self.z()
+                )
+            }
+
+        }
+
         impl<T,S> Mul<S> for $t where Self: Vec3View<T>, S: Copy, T: num_traits::Float + Mul<S, Output=T> {
 
             type Output = Vec3<T>;

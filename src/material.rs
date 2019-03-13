@@ -1,29 +1,29 @@
 use super::color::*;
 use super::raytracing::*;
 
-pub struct Material {
+pub struct Material<T> {
     pub color: RGBAColor, // alpha determines how many rays pass through the material and are potentially refracted
 
-    pub reflection: RaySpreadInfo,
-    pub refraction: RaySpreadInfo,
+    pub reflection: RaySpreadInfo<T>,
+    pub refraction: RaySpreadInfo<T>,
 
     pub last_bounce_color: RGBColor
 }
 
-pub struct RaySpreadInfo {
+pub struct RaySpreadInfo<T> {
     pub intensity: f32,
-    pub max_angle: f32,
-    pub edge_multiplier: f32
+    pub max_angle: T,
+    pub edge_multiplier: f32 // TODO: Hespec this value in the calcs
 }
 
-impl Material {
+impl<T> Material<T> {
 
-    pub fn opaque_reflective(col: RGBColor, reflectiveness: f32, edge_reflection_multiplier: f32) -> Material {
+    pub fn opaque_reflective(col: RGBColor, reflectiveness: f32, edge_reflection_multiplier: f32) -> Material<T> where T: num_traits::Float {
         Material {
             color: col.into(),
 
-            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: 0.0, edge_multiplier: edge_reflection_multiplier },
-            refraction: RaySpreadInfo { intensity: 0.0, max_angle: 90.0, edge_multiplier: 1.0 },
+            reflection: RaySpreadInfo { intensity: reflectiveness, max_angle: T::from(90.0).unwrap(), edge_multiplier: edge_reflection_multiplier },
+            refraction: RaySpreadInfo { intensity: 0.0, max_angle: T::zero(), edge_multiplier: 1.0 },
 
             last_bounce_color: col * (1.0 - reflectiveness)
         }
@@ -33,7 +33,7 @@ impl Material {
 
 pub trait HasMaterial<T> {
     
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material;
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T>;
 
 }
 
@@ -45,11 +45,11 @@ pub trait HasMaterialProvider<T> {
 
 }
 
-pub struct StaticMaterialProvider(pub Material);
+pub struct StaticMaterialProvider<T>(pub Material<T>);
 
-impl<T> HasMaterial<T> for StaticMaterialProvider {
+impl<T> HasMaterial<T> for StaticMaterialProvider<T> {
 
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material {
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T> {
         &self.0
     }
 

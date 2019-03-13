@@ -28,13 +28,22 @@ pub struct GeometryHitInfo<T> {
 pub struct RenderingParameters {
     pub min_intensity: f32,
     pub max_bounces: i32,
-    pub max_rays: i32
+    pub max_reflect_rays: i32,
+    pub max_refract_rays: i32
 }
 
-// Convenience struct so we don't need to pass around so much stuff
+// Convenience structs so we don't need to pass around so much stuff
 struct RaytraceParameters<'a, T> {
     scene: &'a Scene<T>,
     render_params: &'a RenderingParameters,
+}
+
+struct HitInfo<'a, T> {
+    mat: &'a Material<T>,
+    hit: &'a GeometryHitInfo<T>, 
+    ray: &'a Ray<T>, 
+    bounces: i32, 
+    intensity: f32
 }
 
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
@@ -123,66 +132,160 @@ fn raytrace_recursive<T>(params: &RaytraceParameters<T>, ray: Ray<T>, bounces: i
 
         let mat = mat_provider.get_material_at(&hit);
 
-        hit_object(params, mat, &hit, &ray, bounces, intensity)
+        let hit_info = HitInfo {
+            mat,
+            hit: &hit,
+            ray: &ray,
+            bounces,
+            intensity
+        };
+
+        hit_object(params, &hit_info)
     } else {
         hit_skybox(&ray)
     }
 }
 
-fn hit_object<T>(params: &RaytraceParameters<T>, mat: &Material, hit: &GeometryHitInfo<T>, ray: &Ray<T>, bounces: i32, intensity: f32) -> RGBColor
+/////////////// Raytracing Intensity Calculation ///////////////
+/// 
+///                         intensity
+///                       /           \
+///                 alpha              1-alpha
+///               /       \           /       \
+///             refl.   1-refl.     1-refr.    refr.
+///             int.      int.      int.       int.
+///            /           \        /            \
+///    total refl. int.   mat color int.    total refr. int.
+/// 
+////////////////////////////////////////////////////////////////
+
+fn hit_object<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> RGBColor
     where T: num_traits::Float {
     
-    let mut output = RGBColor::BLACK;
+    // Calculate intensities of color, reflection and refraction
+    let mat_color_intensity = hit_info.intensity * (
+        (hit_info.mat.color.a * (1.0 - hit_info.mat.reflection.intensity)) + 
+        ((1.0 - hit_info.mat.color.a) * (1.0 - hit_info.mat.refraction.intensity))
+    );
+    let total_reflection_intensity = hit_info.intensity * hit_info.mat.color.a * hit_info.mat.reflection.intensity;
+    let total_refraction_intensity = hit_info.intensity * (1.0 - hit_info.mat.color.a) * hit_info.mat.refraction.intensity;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
-    output += RGBColor::from(mat.color)
-    * intensity
-    * ((mat.color.a * (1.0 - mat.reflection.intensity)) + ((1.0 - mat.color.a) * (1.0 - mat.refraction.intensity)));
+    let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
 
     // Abort if we hit the bounce limit
-    if bounces == params.render_params.max_bounces {
+    if hit_info.bounces == params.render_params.max_bounces {
         return output
     }
 
-    // Intensity "budgets" for reflection and refraction
-    let reflection_intensity = intensity * mat.color.a * mat.reflection.intensity;
-    let refraction_intensity = intensity * (1.0 - mat.color.a) * mat.refraction.intensity;
-
-    // Ray budget for reflection
-    let reflection_rays = ((mat.reflection.intensity / (mat.reflection.intensity + mat.refraction.intensity)) * (params.render_params.max_rays as f32)) as i32;
-
-    // Calculate reflective influence on color if the influence threshold is met
-    if reflection_intensity > params.render_params.min_intensity {
-        
-        // Special case for perfect reflection; We only need to send out a single ray
-        if 0.0 == mat.reflection.max_angle {
-
-            output += raytrace_recursive(params, 
-                Ray {
-                    origin: hit.position,
-                    direction: ray.direction.reflect(hit.normal).into_normalized()
-                }, bounces + 1, reflection_intensity) * reflection_intensity;
-
-        } else {
-            unimplemented!()
-        }
-
+    // Add reflective influence to output if the influence threshold is met
+    if total_reflection_intensity > params.render_params.min_intensity {     
+        reflect(params, hit_info, total_reflection_intensity, &mut output)
     }
 
-    // Ray budget for refraction
-    let refraction_rays = params.render_params.max_rays - reflection_rays;
-
-    // Calculate refractive influence on color if the influence threshold is met
-    if refraction_intensity > params.render_params.min_intensity {
+    // Add refractive influence to output if the influence threshold is met
+    if total_refraction_intensity > params.render_params.min_intensity {
         unimplemented!()
     }
 
     output
 }
 
+fn reflect<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where T: num_traits::Float {
+
+    // Special case for perfect reflection; We only need to send out a single ray
+        if hit_info.mat.reflection.max_angle.is_zero() {
+
+            let ray = Ray {
+                origin: hit_info.hit.position,
+                direction: hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized()
+            };
+
+            *output += raytrace_recursive(params, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+
+        } else {
+            
+            let ray_directions = gen_sample_ray_cone(hit_info, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
+
+            let ray_intensity = total_intensity / (ray_directions.len() as f32);
+
+            for dir in ray_directions {
+
+                let ray = Ray {
+                    origin: hit_info.hit.position,
+                    direction: dir
+                };
+
+                *output += raytrace_recursive(params, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
+            }
+
+        }
+}
+
+fn gen_sample_ray_cone<T>(hit_info: &HitInfo<T>, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where T: num_traits::Float {
+
+    // TODO: Think about precision issues here
+    // TODO: Eliminate f32 from everything that touches a ray!
+
+    // Reflect the incoming ray direction
+    let normal = hit_info.hit.normal;
+    let reflected = hit_info.ray.direction.reflect(normal).into_normalized();
+
+    // Generate uniform ray directions inside a cone around the 
+    // reflected ray. For this, we use points on a parametric spiral that 
+    // lies on the sufrace of the intersection of the unity sphere with 
+    // the max_angle cone. We also make sure to include the perfectly reflected ray 
+    // in the iterator. The spiral here has 11 windings because thats a prime
+    // and that probably does something very smart.
+
+    let pseudo_rand_rot_angle =
+        hit_info.hit.position.x() * T::from(12824383584.0).unwrap() +
+        hit_info.hit.position.y() * T::from(48238354821.0).unwrap() +
+        hit_info.hit.position.z() * T::from(-53882734353.0).unwrap();
+
+    let max_angle_sin = (max_angle * T::from(DEG_2_RAD).unwrap()).sin();
+
+    let winding_param = T::from(11.0).unwrap() * T::from(TWO_PI).unwrap();
+
+    assert!(max_rays > 1); // Avoid div by zero
+
+    (0..max_rays)
+        .map(move |ray_index| T::from(ray_index).unwrap() / T::from(max_rays - 1).unwrap() )
+        .map(|mut t| {
+
+            // This seems to remove a bias for rays to prefer shallow angles TODO: Investigate
+            t = T::one() - (T::one() - t).powf(T::from(2).unwrap());
+
+            // Spiral radius scaling factor
+            let ts = t * max_angle_sin;
+
+            // Spiral winding parameter
+            let wp = t * winding_param;
+
+            let vx = ts * wp.cos();
+            let vz = ts * wp.sin();
+
+            let mut vy = (T::one() - vx*vx - vz*vz).sqrt();
+
+            if !vy.is_finite() {
+                vy = T::zero()
+            }
+
+            let mut v = Vec3(vx, vy, vz);
+
+            // To avoid generating patters across pixels, we pseduo-randomly rotate the vector around local-space Y
+            v.rotate_y(pseudo_rand_rot_angle);
+
+            v.reorient_y_axis(reflected)
+        })
+        //.filter(move |v| v.dot(normal) > T::zero()) // Filter out the ones that penetrate the geometry
+        .map(|v| v.into_normalized())
+        .collect::<Vec<_>>()
+}
+
 fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     
-    // Dumbass implementation that makes the sky a checkerboard
+    // Dumbass implementation that makes the floor a checkerboard and the sky black TODO:
 
     if ray.direction.y() >= T::zero() {
         return RGBColor::BLACK
@@ -205,6 +308,7 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     }
 }
 
+// Comparison function that determines which raycast hit is closer to the ray origin
 fn hit_dist_comp<T>(ray: &Ray<T>, a: &GeometryHitInfo<T>, b: &GeometryHitInfo<T>) -> cmp::Ordering where
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
     T: num_traits::Float {
