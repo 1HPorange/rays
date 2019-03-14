@@ -48,13 +48,13 @@ fn save_to_file() {
 fn add_geometry() {
 
     let orange = geometry::Sphere { 
-        center: Vec3(-0.2, 3.0, 5.0),
+        center: Vec3(0.0, 3.0, 5.0),
         radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_diffuse(RGBColor {
             r: 1.0,
             g: 0.5,
             b: 0.0
-        }, 0.15, 1.0)))
+        }, 0.0, 1.0, 2.0)))
     };
 
     let chrome_big = geometry::Sphere { 
@@ -62,9 +62,9 @@ fn add_geometry() {
         radius: 7.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
             r: 0.0,
-            g: 0.5,
-            b: 1.0
-        }, 0.8, 1.0)))
+            g: 0.1,
+            b: 0.2
+        }, 0.025, 1.0, 4.0)))
     };
 
     let diffuse = geometry::Sphere { 
@@ -74,7 +74,7 @@ fn add_geometry() {
             r: 1.0,
             g: 0.0,
             b: 0.0
-        }, 0.75)))
+        }, 0.57, 1.0, 2.0)))
     };
 
     let scene = scene::Scene {
@@ -86,9 +86,9 @@ fn add_geometry() {
     let mut render_target = output::RenderTarget::new(1280, 720);
 
     let render_params = raytracing::RenderingParameters { 
-        min_intensity: 0.05, 
+        min_intensity: 0.0, 
         max_bounces: 2, 
-        max_reflect_rays: 10,
+        max_reflect_rays: 30,
         max_refract_rays: 2,
         max_dof_rays: 50//2000
     };

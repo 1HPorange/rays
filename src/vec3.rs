@@ -11,8 +11,8 @@ pub struct Vec3Norm<T>(Vec3<T>);
 const EPSILON: f32 = 0.00001;
 
 // TODO: Move these constants somewhere smarter
-pub const DEG_2_RAD: f64 = 0.01745329252;
-pub const TWO_PI: f64 = 2.0 * 3.14159265358979323846264338327;
+pub const DEG_2_RAD: f64 = 0.0174532925199433;
+//pub const RAD_2_DEG: f64 = 57.2957795130823;
 
 impl<T> Vec3<T> where T: num_traits::Float {
 

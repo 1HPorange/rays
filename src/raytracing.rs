@@ -236,12 +236,22 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     T: num_traits::Float, 
     R: Rng + ?Sized {
     
+    // Calculate the edge effect on reflection and refraction based on the angle of incidence
+    let angle_of_incidence: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
+    let incidence_factor = (angle_of_incidence.acos() / std::f32::consts::FRAC_PI_2).min(1.0).powf(hit_info.mat.edge_effect_power);
+    let scaled_reflection_intensity = 
+        (1.0 - incidence_factor)    * hit_info.mat.reflection.intensity + 
+        incidence_factor            * hit_info.mat.reflection.edge_effect;
+
+    // Useful for debugging: Return some interesting value as a color
+    //return RGBColor::PINK * scaled_reflection_intensity;
+
     // Calculate intensities of color, reflection and refraction
     let mat_color_intensity = hit_info.intensity * (
-        (hit_info.mat.color.a * (1.0 - hit_info.mat.reflection.intensity)) + 
+        (hit_info.mat.color.a * (1.0 - scaled_reflection_intensity)) + 
         ((1.0 - hit_info.mat.color.a) * (1.0 - hit_info.mat.refraction.intensity))
     );
-    let total_reflection_intensity = hit_info.intensity * hit_info.mat.color.a * hit_info.mat.reflection.intensity;
+    let total_reflection_intensity = hit_info.intensity * hit_info.mat.color.a * scaled_reflection_intensity;
     let total_refraction_intensity = hit_info.intensity * (1.0 - hit_info.mat.color.a) * hit_info.mat.refraction.intensity;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
@@ -266,8 +276,8 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
 }
 
 fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where 
-T: num_traits::Float,
-R: Rng + ?Sized {
+    T: num_traits::Float,
+    R: Rng + ?Sized {
 
     // Special case for perfect reflection; We only need to send out a single ray
         if hit_info.mat.reflection.max_angle.is_zero() {
