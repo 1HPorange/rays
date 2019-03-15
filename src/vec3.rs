@@ -8,7 +8,7 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3Norm<T>(Vec3<T>);
 
-const EPSILON: f32 = 0.00001;
+const EPSILON: f64 = 0.00001;
 
 // TODO: Move these constants somewhere smarter
 pub const DEG_2_RAD: f64 = 0.0174532925199433;

@@ -7,47 +7,49 @@ mod camera;
 mod scene;
 mod material;
 
+use scene::*;
+use camera::*;
 use vec3::*;
 use material::*;
 use color::*;
+use raytracing::*;
+use geometry::*;
+use output::*;
 
 fn main() {
 
-    create_scene_desc();
+    let scene = create_scene_desc();
 
-    create_camera_setup();
+    let camera = create_camera();
 
-    // render();
+    let mut render_target = create_render_target();
 
-    save_to_file();
+    let render_params = create_render_parameters();
+
+    render(&scene, &camera, &mut render_target, &render_params);
+
+    save_to_file(&render_target);
 }
 
 // Abstract program flow. Usually you won't have to touch this
 
-fn create_scene_desc() {
+fn create_scene_desc() -> Scene<f64> {
 
-    add_geometry();
+    let scene = Scene {
+        objects: create_geometry()
+    };
 
-    set_sky();;
-}
+    //set_sky(&mut scene);
 
-fn create_camera_setup() {
-
-    set_camera_parameters();
-
-    set_camera_effects();
-}
-
-fn save_to_file() {
-    unimplemented!()
+    scene
 }
 
 // Customize scene and camera setup inside the functions below
 //////////////////////////////////////////////////////////////
 
-fn add_geometry() {
+fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
-    let orange = geometry::Sphere { 
+    let orange = Sphere { 
         center: Vec3(0.0, 3.0, 5.0),
         radius: 3.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
@@ -64,7 +66,7 @@ fn add_geometry() {
             })))
     };
 
-    let blue = geometry::Sphere { 
+    let blue = Sphere { 
         center: Vec3(4.0, 7.0, 14.0),
         radius: 7.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
@@ -81,7 +83,7 @@ fn add_geometry() {
             })))
     };
 
-    let red = geometry::Sphere { 
+    let red = Sphere { 
         center: Vec3(-6.0, 4.0, 10.0),
         radius: 4.0,
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
@@ -98,39 +100,37 @@ fn add_geometry() {
             })))
     };
 
-    let scene = scene::Scene {
-        objects: vec![Box::new(orange), Box::new(blue), Box::new(red)]
-    };
+    vec![Box::new(orange), Box::new(blue), Box::new(red)]
+}
 
-    let camera: camera::Camera<f64> = camera::Camera::default();
+fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 
-    let mut render_target = output::RenderTarget::new(1280, 720);
+    let camera = Camera::default();
 
-    let render_params = raytracing::RenderingParameters { 
+    
+
+    camera
+}
+
+fn create_render_target() -> RenderTarget {
+    RenderTarget::new(1280, 720)
+}
+
+fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
+
+    RenderingParameters { 
         min_intensity: 0.0, 
         max_bounces: 2, 
         max_reflect_rays: 5,
         max_refract_rays: 2,
-        max_dof_rays: 30,//2000
-        float_correction_bias: 0.001
-    };
+        max_dof_rays: 30,
+        float_correction_bias: T::from(0.001).unwrap()
+    }
+}
 
-    raytracing::render::<f64>(&scene, &camera, &mut render_target, &render_params);
+fn save_to_file(render_target: &RenderTarget) {
 
     render_target.save_as_ppm("D:/Downloads/weirdo.ppm")
         .expect("Could not write to output file");
-
-    std::process::exit(0)
-}
-
-fn set_sky() {
-
-}
-
-fn set_camera_parameters() {
-
-}
-
-fn set_camera_effects() {
 
 }
