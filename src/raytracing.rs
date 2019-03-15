@@ -32,18 +32,23 @@ pub struct GeometryHitInfo<T> {
 
 }
 
-pub struct RenderingParameters {
+pub struct RenderingParameters<T> {
     pub min_intensity: f32,
     pub max_bounces: i32,
     pub max_reflect_rays: i32,
     pub max_refract_rays: i32,
-    pub max_dof_rays: i32
+    pub max_dof_rays: i32,
+
+    /// Floating point errors can cause visual artifacts on relection and refraction
+    /// This bias introduces slight inaccuracies with these phenomena, but removes the
+    /// artifacts. Basically: Keep lowering this until you see artifacts
+    pub float_correction_bias: T
 }
 
 // Convenience structs so we don't need to pass around so much stuff
 struct RaytraceParameters<'a, T> {
     scene: &'a Scene<T>,
-    render_params: &'a RenderingParameters,
+    render_params: &'a RenderingParameters<T>,
 }
 
 struct HitInfo<'a, T> {
@@ -54,7 +59,7 @@ struct HitInfo<'a, T> {
     intensity: f32
 }
 
-pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters) where 
+pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters<T>) where 
     T: num_traits::Float + Send + Sync {
 
     let raytrace_params = RaytraceParameters {
@@ -279,33 +284,42 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     T: num_traits::Float,
     R: Rng + ?Sized {
 
+    // Origin of all reflected rays
+    let origin = get_reflection_origin_with_bias(params, hit_info);
+
     // Special case for perfect reflection; We only need to send out a single ray
-        if hit_info.mat.reflection.max_angle.is_zero() {
+    if hit_info.mat.reflection.max_angle.is_zero() {
+
+        let ray = Ray {
+            origin,
+            direction: hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized()
+        };
+
+        *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+
+    } else {
+
+        let ray_directions = gen_sample_ray_cone(hit_info, rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
+
+        let ray_intensity = total_intensity / (ray_directions.len() as f32);
+
+        for dir in ray_directions {
 
             let ray = Ray {
-                origin: hit_info.hit.position,
-                direction: hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized()
+                origin,
+                direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
-
-        } else {
-            
-            let ray_directions = gen_sample_ray_cone(hit_info, rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
-
-            let ray_intensity = total_intensity / (ray_directions.len() as f32);
-
-            for dir in ray_directions {
-
-                let ray = Ray {
-                    origin: hit_info.hit.position,
-                    direction: dir
-                };
-
-                *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
-            }
-
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
         }
+
+    }
+}
+
+fn get_reflection_origin_with_bias<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> Vec3<T> where T: num_traits::Float {
+
+    hit_info.hit.position + hit_info.hit.normal * params.render_params.float_correction_bias
+
 }
 
 fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where 

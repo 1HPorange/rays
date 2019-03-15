@@ -20,45 +20,47 @@ impl<T> RayTarget<T> for Sphere<T> where
         // Squared radius
         let rad_sqr = self.radius * self.radius;
 
-        // Distance from ray origin to sphere center
-        let dist = self.center - ray.origin;
+        // Ray origin to sphere center
+        let orig_to_center = self.center - ray.origin;
 
-        if dist.sqr_length() < rad_sqr {
-
-            // Abort when ray starts inside the sphere
-            return Option::None
-        }
+        // If the ray starts inside, we can skip some checks, since it is a guaranteed hit
+        let ray_starts_inside = orig_to_center.sqr_length() < rad_sqr;
 
         // Distance from ray origin to sphere center projected onto ray direction
-        let dist_proj_len = dist.dot(ray.direction);
+        let orig_to_midpoint_len = orig_to_center.dot(ray.direction);
         
-        if dist_proj_len < T::zero() {
+        let ray_starts_behind_center = orig_to_midpoint_len < T::zero();
 
-            // Abort when we are behind sphere
+        if !ray_starts_inside && ray_starts_behind_center {
+
+            // We are completely behind the sphere, so we abort
             return Option::None
         }
             
-        let orig_to_midpoint = ray.direction * dist_proj_len;
+        let orig_to_midpoint = ray.direction * orig_to_midpoint_len;
         let midpoint_to_center_sqr = (ray.origin + orig_to_midpoint - self.center).sqr_length();
 
-        if midpoint_to_center_sqr > rad_sqr {
+        if !ray_starts_inside && midpoint_to_center_sqr > rad_sqr {
 
-            // Abort when we miss the sphere
+            // Abort when our ray misses the sphere completely
             return Option::None
         }
 
         let midpoint_to_surface = (rad_sqr - midpoint_to_center_sqr).sqrt();
 
-        let hitpoint = ray.origin + ray.direction * (dist_proj_len - midpoint_to_surface);
+        // If we start inside the sphere, we always hit the "back wall"
+        let hitpoint = if ray_starts_inside {
+            ray.origin + ray.direction * (orig_to_midpoint_len + midpoint_to_surface)
+        } else {
+            ray.origin + ray.direction * (orig_to_midpoint_len - midpoint_to_surface)
+        };
         let normal = ((hitpoint - self.center) / self.radius).into_normalized();
 
         Option::Some(GeometryHitInfo {
             position: hitpoint,
             normal
         })
-
     }
-
 }
 
 impl<T> HasMaterialProvider<T> for Sphere<T> {
