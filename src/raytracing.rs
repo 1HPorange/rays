@@ -28,7 +28,7 @@ pub trait RayTarget<T> {
 pub struct GeometryHitInfo<T> {
 
     pub position: Vec3<T>,
-    pub normal: Vec3Norm<T> // TODO: Make the calculation of this optional or think of something else. Sometimes we just need a hit test
+    pub normal: Vec3Norm<T>
 
 }
 
@@ -39,7 +39,7 @@ pub struct RenderingParameters<T> {
     pub max_refract_rays: i32,
     pub max_dof_rays: i32,
 
-    /// Floating point errors can cause visual artifacts on relection and refraction
+    /// Floating point errors can cause visual artifacts in reflections and refraction.
     /// This bias introduces slight inaccuracies with these phenomena, but removes the
     /// artifacts. Basically: Keep lowering this until you see artifacts
     pub float_correction_bias: T
@@ -311,7 +311,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity) * ray_intensity;
         }
 
     }
