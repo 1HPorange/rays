@@ -241,29 +241,30 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     T: num_traits::Float, 
     R: Rng + ?Sized {
     
-    // Calculate the edge effect on reflection and refraction based on the angle of incidence
+    // Calculate the angle of incidence and it's steepness
     let angle_of_incidence: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
-    let incidence_factor = (angle_of_incidence.acos() / std::f32::consts::FRAC_PI_2).min(1.0).powf(hit_info.mat.edge_effect_power);
+    let incidence_angle_steepness = 1.0 - (angle_of_incidence.acos() / std::f32::consts::FRAC_PI_2 - 1.0).abs();
+    
+
+    // Calculate the effect of the angle of incidence on reflectivity
+    let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
     let scaled_reflection_intensity = 
-        (1.0 - incidence_factor)    * hit_info.mat.reflection.intensity + 
-        incidence_factor            * hit_info.mat.reflection.edge_effect;
+        (1.0 - incidence_reflection_influence)    * hit_info.mat.reflection.intensity_center + 
+        incidence_reflection_influence            * hit_info.mat.reflection.intensity_edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;
 
     // Calculate intensities of color, reflection and refraction
-    let mat_color_intensity = hit_info.intensity * (
-        (hit_info.mat.color.a * (1.0 - scaled_reflection_intensity)) + 
-        ((1.0 - hit_info.mat.color.a) * (1.0 - hit_info.mat.refraction.intensity))
-    );
-    let total_reflection_intensity = hit_info.intensity * hit_info.mat.color.a * scaled_reflection_intensity;
-    let total_refraction_intensity = hit_info.intensity * (1.0 - hit_info.mat.color.a) * hit_info.mat.refraction.intensity;
+    let mat_color_intensity = hit_info.mat.color.a * (1.0 - scaled_reflection_intensity);
+    let total_reflection_intensity = 1.0 - mat_color_intensity;
+    let total_refraction_intensity = 1.0 - hit_info.mat.color.a;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
     let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
 
-    // Abort if we hit the bounce limit
-    if hit_info.bounces == params.render_params.max_bounces {
+    // Abort recursion if we hit the bounce or intensity limit
+    if hit_info.bounces == params.render_params.max_bounces || hit_info.intensity < params.render_params.min_intensity {
         return output
     }
 
@@ -284,8 +285,8 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     T: num_traits::Float,
     R: Rng + ?Sized {
 
-    // Origin of all reflected rays
-    let origin = get_reflection_origin_with_bias(params, hit_info);
+    // Origin of all reflected rays including bias
+    let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.float_correction_bias;
 
     // Special case for perfect reflection; We only need to send out a single ray
     if hit_info.mat.reflection.max_angle.is_zero() {
@@ -314,12 +315,6 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         }
 
     }
-}
-
-fn get_reflection_origin_with_bias<T>(params: &RaytraceParameters<T>, hit_info: &HitInfo<T>) -> Vec3<T> where T: num_traits::Float {
-
-    hit_info.hit.position + hit_info.hit.normal * params.render_params.float_correction_bias
-
 }
 
 fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where 

@@ -50,35 +50,56 @@ fn add_geometry() {
     let orange = geometry::Sphere { 
         center: Vec3(0.0, 3.0, 5.0),
         radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_diffuse(RGBColor {
-            r: 1.0,
-            g: 0.5,
-            b: 0.0
-        }, 0.0, 1.0, 2.0)))
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
+            RGBColor {
+                r: 1.0,
+                g: 0.5,
+                b: 0.0
+            }, 
+            ReflectionParams {
+                intensity_center: 0.0,
+                intensity_edges: 1.0,
+                edge_effect_power: 2.0,
+                max_angle: 90.0
+            })))
     };
 
-    let chrome_big = geometry::Sphere { 
+    let blue = geometry::Sphere { 
         center: Vec3(4.0, 7.0, 14.0),
         radius: 7.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(RGBColor {
-            r: 0.0,
-            g: 0.1,
-            b: 0.2
-        }, 0.025, 1.0, 4.0)))
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
+            RGBColor {
+                r: 0.0,
+                g: 0.1,
+                b: 0.2
+            }, 
+            ReflectionParams {
+                intensity_center: 0.025,
+                intensity_edges: 1.0,
+                edge_effect_power: 4.0,
+                max_angle: 0.0
+            })))
     };
 
-    let diffuse = geometry::Sphere { 
+    let red = geometry::Sphere { 
         center: Vec3(-6.0, 4.0, 10.0),
         radius: 4.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_diffuse(RGBColor {
-            r: 1.0,
-            g: 0.0,
-            b: 0.0
-        }, 0.57, 1.0, 2.0)))
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
+            RGBColor {
+                r: 1.0,
+                g: 0.0,
+                b: 0.0
+            }, 
+            ReflectionParams {
+                intensity_center: 0.57,
+                intensity_edges: 0.9,
+                edge_effect_power: 2.0,
+                max_angle: 90.0
+            })))
     };
 
     let scene = scene::Scene {
-        objects: vec![Box::new(orange), Box::new(chrome_big), Box::new(diffuse)]
+        objects: vec![Box::new(orange), Box::new(blue), Box::new(red)]
     };
 
     let camera: camera::Camera<f64> = camera::Camera::default();

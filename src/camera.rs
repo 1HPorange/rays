@@ -51,7 +51,7 @@ impl<T> Camera<T> where T: num_traits::Float{
                 height: T::from(9.0).unwrap()
             },
             fov_horizontal: NumCast::from(60.0).unwrap(),
-            dof_angle: T::from(0.25).unwrap()
+            dof_angle: T::from(0.1).unwrap()
         }
 
     }
