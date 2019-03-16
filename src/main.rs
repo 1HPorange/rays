@@ -50,28 +50,28 @@ fn create_scene_desc() -> Scene<f64> {
 fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let orange = Sphere { 
-        center: Vec3(-0.5, 3.0, 5.0),
-        radius: 3.0,
+        center: Vec3(-1.0, 4.5, 5.0),
+        radius: 4.5,
         material_provider: Box::new(StaticMaterialProvider(Material {
             color: RGBColor {
-                r: 0.2,
-                g: 0.2,
-                b: 0.2
+                r: 1.0,
+                g: 0.9,
+                b: 1.0
             }, 
             transparency: Transparency {
-                opacity_center: 0.0,
+                opacity_center: 0.05,
                 opacity_edges: 1.0,
-                edge_effect_power: 3.0
+                edge_effect_power: 2.0
             },
             reflection: ReflectionParams {
-                intensity_center: 1.0,
+                intensity_center: 0.0,
                 intensity_edges: 1.0,
-                edge_effect_power: 1.0,
-                max_angle: 0.0
+                edge_effect_power: 5.0,
+                max_angle: 5.0
             },
             refraction: RefractionParams {
-                index_of_refraction: 1.9,
-                max_angle: 0.0
+                index_of_refraction: 1.33,
+                max_angle: 2.5
             }}))
     };
 
@@ -127,9 +127,9 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
 
     RenderingParameters { 
         min_intensity: 0.0, 
-        max_bounces: 5, 
+        max_bounces: 3, 
         max_reflect_rays: 5,
-        max_refract_rays: 2,
+        max_refract_rays: 5,
         max_dof_rays: 60,
         float_correction_bias: T::from(0.001).unwrap()
     }

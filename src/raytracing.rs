@@ -292,20 +292,18 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     // Origin of all reflected rays including bias
     let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.float_correction_bias;
+    let direction = hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized();
 
     // Special case for perfect reflection; We only need to send out a single ray
     if hit_info.mat.reflection.max_angle.is_zero() {
 
-        let ray = Ray {
-            origin,
-            direction: hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized()
-        };
+        let ray = Ray { origin, direction };
 
         *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
 
     } else {
 
-        let ray_directions = gen_sample_ray_cone(hit_info, rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays);
+        let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays, hit_info.hit.normal, direction);
 
         let ray_intensity = total_intensity / (ray_directions.len() as f32);
 
@@ -322,18 +320,9 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     }
 }
 
-fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, max_rays: i32) -> Vec<Vec3Norm<T>> where 
+fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, reorient_axis: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
     T: num_traits::Float,
     R: Rng + ?Sized {
-
-    // TODO: Think about precision issues here
-    // TODO: Eliminate f32 from everything that touches a ray!
-
-    // Reflect the incoming ray direction
-    let normal = hit_info.hit.normal;
-    let reflected = hit_info.ray.direction.reflect(normal).into_normalized();
-
-    assert!(max_rays > 1); // Avoid div by zero
 
     (0..max_rays)
         .map(|_| {
@@ -345,9 +334,9 @@ fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, ma
             v.rotate_x(rx);
             v.rotate_y(ry);
 
-            v.reorient_y_axis(reflected)
+            v.reorient_y_axis(reorient_axis)
         })
-        .filter(move |v| v.dot(normal) > T::zero()) // Filter out the ones that penetrate the geometry
+        .filter(move |v| v.dot(cutoff_normal) > T::zero()) // Filter out the ones that penetrate the geometry
         .map(|v| v.into_normalized())
         .collect::<Vec<_>>()
 }
@@ -378,7 +367,9 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     let hit_cos = hit_info.ray.direction.dot(hit_info.hit.normal);
 
-    let refr_ray = if hit_cos <= T::zero() {
+    let going_inside_object = hit_cos <= T::zero();
+
+    let refr_ray = if going_inside_object {
         // Air into sth else
         get_refr_ray(T::one(), hit_info.mat.refraction.index_of_refraction, hit_info.hit.normal, -hit_cos)
     } else {
@@ -386,13 +377,35 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         get_refr_ray(hit_info.mat.refraction.index_of_refraction, T::one(), (-hit_info.hit.normal).into_normalized(), hit_cos)
     };
 
-    // Special case for perfect refraction: We only need to send out a single ray
+   
     if hit_info.mat.refraction.max_angle.is_zero() {
+
+         // Special case for perfect refraction: We only need to send out a single ray
 
         *output += raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity) * total_intensity;
 
     } else {
-        unimplemented!()
+
+        // Otherwise, we send many rays
+
+        let origin = refr_ray.origin;
+
+        let cutoff_normal = if going_inside_object { (-hit_info.hit.normal).into_normalized() } else { hit_info.hit.normal };
+
+        let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, params.render_params.max_refract_rays, cutoff_normal, refr_ray.direction);
+
+        let ray_intensity = total_intensity / (directions.len() as f32);
+
+        for dir in directions {
+
+            let ray = Ray {
+                origin,
+                direction: dir
+            };
+
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity) * ray_intensity;
+        }
+
     }
 }
 
