@@ -2,10 +2,16 @@ use super::color::*;
 use super::raytracing::*;
 
 pub struct Material<T> {
-    pub color: RGBAColor, // alpha determines how many rays pass through the material and are potentially refracted
-
+    pub color: RGBColor, // alpha determines how many rays pass through the material and are potentially refracted
+    pub transparency: Transparency,
     pub reflection: ReflectionParams<T>,
     pub refraction: RefractionParams<T>,
+}
+
+pub struct Transparency {
+    pub opacity_center: f32,
+    pub opacity_edges: f32,
+    pub edge_effect_power: f32
 }
 
 pub struct ReflectionParams<T> {
@@ -17,14 +23,15 @@ pub struct ReflectionParams<T> {
 
 pub struct RefractionParams<T> {
     pub index_of_refraction: T,
-    pub max_angle: T
+    pub max_angle: T,
 }
 
 impl<T> Material<T> {
 
-    pub fn opaque_reflective(col: RGBColor, reflection: ReflectionParams<T>) -> Material<T> where T: num_traits::Float {
+    pub fn opaque_reflective(color: RGBColor, reflection: ReflectionParams<T>) -> Material<T> where T: num_traits::Float {
         Material {
-            color: col.into(),
+            color,
+            transparency: Transparency { opacity_center: 1.0, opacity_edges: 1.0, edge_effect_power: 1.0 },
             reflection,
             refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }

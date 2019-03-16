@@ -245,20 +245,25 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     let rev_incoming_dot_normal: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
     let incidence_angle_steepness = 1.0 - (rev_incoming_dot_normal.acos() / std::f32::consts::FRAC_PI_2 - 1.0).abs();
     
-
     // Calculate the effect of the angle of incidence on reflectivity
     let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
     let scaled_reflection_intensity = 
-        (1.0 - incidence_reflection_influence)    * hit_info.mat.reflection.intensity_center + 
-        incidence_reflection_influence            * hit_info.mat.reflection.intensity_edges;
+        (1.0 - incidence_reflection_influence)  * hit_info.mat.reflection.intensity_center + 
+        incidence_reflection_influence          * hit_info.mat.reflection.intensity_edges;
+
+    // Calculate the effect of the angle of incidence on refraction (object alpha)
+    let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.transparency.edge_effect_power);
+    let scaled_alpha = 
+        (1.0 - incidence_alpha_influence)       * hit_info.mat.transparency.opacity_center +
+        incidence_alpha_influence               * hit_info.mat.transparency.opacity_edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;
 
     // Calculate intensities of color, reflection and refraction
-    let mat_color_intensity = hit_info.mat.color.a * (1.0 - scaled_reflection_intensity);
-    let total_reflection_intensity = hit_info.mat.color.a * scaled_reflection_intensity;
-    let total_refraction_intensity = 1.0 - hit_info.mat.color.a;
+    let mat_color_intensity = scaled_alpha * (1.0 - scaled_reflection_intensity);
+    let total_reflection_intensity = scaled_alpha * scaled_reflection_intensity;
+    let total_refraction_intensity = 1.0 - scaled_alpha;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
     let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
@@ -415,7 +420,7 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     let b = z & 1 == 0;
 
     if a != b {
-        RGBColor::WHITE
+        RGBColor::WHITE * 0.8
     } else {
         RGBColor::BLACK
     }

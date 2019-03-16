@@ -50,20 +50,29 @@ fn create_scene_desc() -> Scene<f64> {
 fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let orange = Sphere { 
-        center: Vec3(0.0, 3.0, 5.0),
+        center: Vec3(-0.5, 3.0, 5.0),
         radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
-            RGBColor {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0
+        material_provider: Box::new(StaticMaterialProvider(Material {
+            color: RGBColor {
+                r: 0.2,
+                g: 0.2,
+                b: 0.2
             }, 
-            ReflectionParams {
-                intensity_center: 0.57,
-                intensity_edges: 0.9,
-                edge_effect_power: 2.0,
-                max_angle: 90.0
-            })))
+            transparency: Transparency {
+                opacity_center: 0.0,
+                opacity_edges: 1.0,
+                edge_effect_power: 3.0
+            },
+            reflection: ReflectionParams {
+                intensity_center: 1.0,
+                intensity_edges: 1.0,
+                edge_effect_power: 1.0,
+                max_angle: 0.0
+            },
+            refraction: RefractionParams {
+                index_of_refraction: 1.9,
+                max_angle: 0.0
+            }}))
     };
 
     let blue = Sphere { 
@@ -89,40 +98,18 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
             RGBColor {
                 r: 1.0,
-                g: 1.0,
-                b: 1.0,
+                g: 0.0,
+                b: 0.0,
             }, 
             ReflectionParams {
-                intensity_center: 0.57,
+                intensity_center: 0.65,
                 intensity_edges: 0.9,
                 edge_effect_power: 2.0,
                 max_angle: 90.0
             })))
     };
 
-    let black = Sphere { 
-        center: Vec3(0.0, 7.0, 5.0),
-        radius: 4.0,
-        material_provider: Box::new(StaticMaterialProvider(Material {
-            color: RGBAColor {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.2
-            }, 
-            reflection: ReflectionParams {
-                intensity_center: 0.57,
-                intensity_edges: 0.9,
-                edge_effect_power: 2.0,
-                max_angle: 90.0
-            },
-            refraction: RefractionParams {
-                index_of_refraction: 1.33,
-                max_angle: 0.0
-            }}))
-    };
-
-    vec![Box::new(orange), Box::new(blue), Box::new(red), Box::new(black)]
+    vec![Box::new(orange), Box::new(blue), Box::new(red)]
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
@@ -133,7 +120,7 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280, 720)
+    RenderTarget::new(1280/2, 720/2)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
