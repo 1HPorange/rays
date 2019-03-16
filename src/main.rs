@@ -50,8 +50,8 @@ fn create_scene_desc() -> Scene<f64> {
 fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let orange = Sphere { 
-        center: Vec3(-1.0, 4.5, 5.0),
-        radius: 4.5,
+        center: Vec3(-0.5, 3.0, 5.0),
+        radius: 3.0,
         material_provider: Box::new(StaticMaterialProvider(Material {
             color: RGBColor {
                 r: 1.0,
@@ -109,7 +109,24 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
             })))
     };
 
-    vec![Box::new(orange), Box::new(blue), Box::new(red)]
+    let red2 = Sphere { 
+        center: Vec3(-9.5, 8.0, 10.0),
+        radius: 4.0,
+        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
+            RGBColor {
+                r: 1.0,
+                g: 0.0,
+                b: 0.0,
+            }, 
+            ReflectionParams {
+                intensity_center: 0.65,
+                intensity_edges: 0.9,
+                edge_effect_power: 2.0,
+                max_angle: 90.0
+            })))
+    };
+
+    vec![Box::new(orange), Box::new(blue), Box::new(red), Box::new(red2)]
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
@@ -120,7 +137,7 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280/2, 720/2)
+    RenderTarget::new(1280, 720)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
@@ -128,9 +145,12 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
     RenderingParameters { 
         min_intensity: 0.0, 
         max_bounces: 3, 
-        max_reflect_rays: 5,
-        max_refract_rays: 5,
-        max_dof_rays: 60,
+        max_reflect_rays: 4,
+        max_refract_rays: 4,
+        max_dof_rays: 30,
+        ao_strength: 0.8,
+        ao_distance: T::from(3.0).unwrap(),
+        ao_rays: 4,
         float_correction_bias: T::from(0.001).unwrap()
     }
 }

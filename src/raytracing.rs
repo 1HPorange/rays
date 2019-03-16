@@ -39,6 +39,11 @@ pub struct RenderingParameters<T> {
     pub max_refract_rays: i32,
     pub max_dof_rays: i32,
 
+    // TODO: MOve to AO struct
+    pub ao_strength: f32,
+    pub ao_distance: T,
+    pub ao_rays: i32,
+
     /// Floating point errors can cause visual artifacts in reflections and refraction.
     /// This bias introduces slight inaccuracies with these phenomena, but removes the
     /// artifacts. Basically: Keep lowering this until you see artifacts
@@ -196,13 +201,7 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
     T: num_traits::Float,
     R: Rng + ?Sized {
 
-    let potential_hits = params.scene.objects.iter()
-        .map(|obj| (obj, obj.test_intersection(&ray)))
-        .filter(|(_, rch)| rch.is_some())
-        .map(|(obj, rch)| (obj, rch.unwrap()));
-
-    let closest_hit = potential_hits
-        .min_by(|a,b| hit_dist_comp(&ray, &a.1, &b.1));
+    let closest_hit = get_closest_hit(params, &ray);
 
     if let Some((obj, hit)) = closest_hit {
 
@@ -210,32 +209,65 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
 
         let mat = mat_provider.get_material_at(&hit);
 
+        // Intensity scale factor based on lighting effects
+        let mut intensity_scale: f32 = 1.0;
+
+        // Ambient Occlusion
+        if params.render_params.ao_strength > 0.0 {
+
+            apply_ao(&mut intensity_scale, rng, params, &hit);
+        }
+
         let hit_info = HitInfo {
             mat,
             hit: &hit,
             ray: &ray,
             bounces,
-            intensity
+            intensity: intensity * intensity_scale
         };
 
-        hit_object(params, rng, &hit_info)
+        hit_object(params, rng, &hit_info) * hit_info.intensity
     } else {
         hit_skybox(&ray)
     }
 }
 
-/////////////// Raytracing Intensity Calculation ///////////////
-/// 
-///                         intensity
-///                       /           \
-///                 alpha              1-alpha
-///               /       \           /       \
-///             refl.   1-refl.     1-refr.    refr.
-///             int.      int.      int.       int.
-///            /           \        /            \
-///    total refl. int.   mat color int.    total refr. int.
-/// 
-////////////////////////////////////////////////////////////////
+fn apply_ao<T,R>(intensity: &mut f32, rng: &mut R, params: &RaytraceParameters<T>, hit: &GeometryHitInfo<T>) where 
+    T: num_traits::Float,
+    R: Rng + ?Sized {
+
+    // Generate ray cone with full spread
+    let origin = hit.position + hit.normal * params.render_params.float_correction_bias;
+    let directions = gen_sample_ray_cone(rng, T::from(90).unwrap(), params.render_params.ao_rays, hit.normal, hit.normal);
+
+    let closest = directions.into_iter()
+        .flat_map(|direction| get_closest_hit(params, &Ray { origin, direction }))
+        // TODO: Investigate this:
+        // .filter(|(_, other_hit)| hit.normal.dot(other_hit.normal) > T::zero()) // Only do AO on EXTERNAL reflections
+        .min_by(|a,b| hit_dist_comp(origin, &a.1, &b.1));
+
+    if let Some((_, hit)) = closest {
+        
+        let distance_normalized = ((hit.position - origin).length() / params.render_params.ao_distance).min(T::one());
+        let distance_normalized: f32 = num_traits::NumCast::from(distance_normalized).unwrap();
+
+        let ao_strength = (1.0 - distance_normalized).powf(2.0) * params.render_params.ao_strength;
+
+        *intensity *= 1.0 - ao_strength;
+    }
+}
+
+fn get_closest_hit<'a, T>(params: &'a RaytraceParameters<T>, ray: &Ray<T>) -> Option<(&'a Box<SceneObject<T>>, GeometryHitInfo<T>)> where T: num_traits::Float {
+
+    let potential_hits = params.scene.objects.iter()
+        .map(|obj| (obj, obj.test_intersection(&ray)))
+        .filter(|(_, rch)| rch.is_some())
+        .map(|(obj, rch)| (obj, rch.unwrap()));
+
+    potential_hits
+        .min_by(|a,b| hit_dist_comp(ray.origin, &a.1, &b.1))
+
+}
 
 fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>) -> RGBColor where 
     T: num_traits::Float, 
@@ -314,7 +346,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity) * ray_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
         }
 
     }
@@ -403,7 +435,7 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity) * ray_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
         }
 
     }
@@ -439,13 +471,13 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
     }
 }
 
-// Comparison function that determines which raycast hit is closer to the ray origin
-fn hit_dist_comp<T>(ray: &Ray<T>, a: &GeometryHitInfo<T>, b: &GeometryHitInfo<T>) -> cmp::Ordering where
+// Comparison function that determines which raycast hit is closer to the supplied point
+fn hit_dist_comp<T>(point: Vec3<T>, a: &GeometryHitInfo<T>, b: &GeometryHitInfo<T>) -> cmp::Ordering where
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
     T: num_traits::Float {
 
     let dist = |rch: &GeometryHitInfo<T>| {
-        (rch.position - ray.origin).sqr_length()
+        (rch.position - point).sqr_length()
     };
 
     dist(a).partial_cmp(&dist(b)).unwrap_or(cmp::Ordering::Equal)
