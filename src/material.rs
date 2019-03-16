@@ -16,7 +16,8 @@ pub struct ReflectionParams<T> {
 }
 
 pub struct RefractionParams<T> {
-    pub index_of_refraction: T
+    pub index_of_refraction: T,
+    pub max_angle: T
 }
 
 impl<T> Material<T> {
@@ -25,7 +26,7 @@ impl<T> Material<T> {
         Material {
             color: col.into(),
             reflection,
-            refraction: RefractionParams { index_of_refraction: T::zero() }
+            refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }
     }
 }

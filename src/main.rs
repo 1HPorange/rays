@@ -55,12 +55,12 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
             RGBColor {
                 r: 1.0,
-                g: 0.5,
+                g: 0.0,
                 b: 0.0
             }, 
             ReflectionParams {
-                intensity_center: 0.0,
-                intensity_edges: 1.0,
+                intensity_center: 0.57,
+                intensity_edges: 0.9,
                 edge_effect_power: 2.0,
                 max_angle: 90.0
             })))
@@ -89,8 +89,8 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
             RGBColor {
                 r: 1.0,
-                g: 0.0,
-                b: 0.0
+                g: 1.0,
+                b: 1.0,
             }, 
             ReflectionParams {
                 intensity_center: 0.57,
@@ -100,14 +100,34 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
             })))
     };
 
-    vec![Box::new(orange), Box::new(blue), Box::new(red)]
+    let black = Sphere { 
+        center: Vec3(0.0, 7.0, 5.0),
+        radius: 4.0,
+        material_provider: Box::new(StaticMaterialProvider(Material {
+            color: RGBAColor {
+                r: 0.0,
+                g: 0.0,
+                b: 0.0,
+                a: 0.2
+            }, 
+            reflection: ReflectionParams {
+                intensity_center: 0.57,
+                intensity_edges: 0.9,
+                edge_effect_power: 2.0,
+                max_angle: 90.0
+            },
+            refraction: RefractionParams {
+                index_of_refraction: 1.33,
+                max_angle: 0.0
+            }}))
+    };
+
+    vec![Box::new(orange), Box::new(blue), Box::new(red), Box::new(black)]
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 
     let camera = Camera::default();
-
-    
 
     camera
 }
@@ -120,10 +140,10 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
 
     RenderingParameters { 
         min_intensity: 0.0, 
-        max_bounces: 2, 
+        max_bounces: 5, 
         max_reflect_rays: 5,
         max_refract_rays: 2,
-        max_dof_rays: 30,
+        max_dof_rays: 60,
         float_correction_bias: T::from(0.001).unwrap()
     }
 }

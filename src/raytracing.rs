@@ -242,8 +242,8 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     R: Rng + ?Sized {
     
     // Calculate the angle of incidence and it's steepness
-    let angle_of_incidence: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
-    let incidence_angle_steepness = 1.0 - (angle_of_incidence.acos() / std::f32::consts::FRAC_PI_2 - 1.0).abs();
+    let rev_incoming_dot_normal: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
+    let incidence_angle_steepness = 1.0 - (rev_incoming_dot_normal.acos() / std::f32::consts::FRAC_PI_2 - 1.0).abs();
     
 
     // Calculate the effect of the angle of incidence on reflectivity
@@ -257,7 +257,7 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
 
     // Calculate intensities of color, reflection and refraction
     let mat_color_intensity = hit_info.mat.color.a * (1.0 - scaled_reflection_intensity);
-    let total_reflection_intensity = 1.0 - mat_color_intensity;
+    let total_reflection_intensity = hit_info.mat.color.a * scaled_reflection_intensity;
     let total_refraction_intensity = 1.0 - hit_info.mat.color.a;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
@@ -275,7 +275,7 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
 
     // Add refractive influence to output if the influence threshold is met
     if total_refraction_intensity > params.render_params.min_intensity {
-        unimplemented!()
+        refract(params, rng, hit_info, total_refraction_intensity, &mut output)
     }
 
     output
@@ -345,6 +345,50 @@ fn gen_sample_ray_cone<T,R>(hit_info: &HitInfo<T>, rng: &mut R, max_angle: T, ma
         .filter(move |v| v.dot(normal) > T::zero()) // Filter out the ones that penetrate the geometry
         .map(|v| v.into_normalized())
         .collect::<Vec<_>>()
+}
+
+fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where 
+    T: num_traits::Float,
+    R: Rng + ?Sized {
+    
+    // This closure is magic and was stolen from:
+    // https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
+    let get_refr_ray = |ior_from: T, ior_into: T, n: Vec3Norm<T>, hit_cos: T| {
+
+        let refr_ratio = ior_from / ior_into;
+
+        let k = T::one() - refr_ratio*refr_ratio * (T::one() - hit_cos*hit_cos);
+
+        if k < T::zero() {
+            let origin = hit_info.hit.position - hit_info.hit.normal * params.render_params.float_correction_bias;
+            let direction = hit_info.ray.direction.reflect((-hit_info.hit.normal).into_normalized()).into_normalized();
+            Ray { origin, direction }
+        } else {
+            // Be careful here: When we leave the medium, we need the bias to take us outside of the object!
+            let origin = hit_info.hit.position - n * params.render_params.float_correction_bias;
+            let direction = (hit_info.ray.direction * refr_ratio + hit_info.hit.normal * (refr_ratio * hit_cos - k.sqrt())).normalize();
+            Ray { origin, direction }
+        }
+    };
+
+    let hit_cos = hit_info.ray.direction.dot(hit_info.hit.normal);
+
+    let refr_ray = if hit_cos <= T::zero() {
+        // Air into sth else
+        get_refr_ray(T::one(), hit_info.mat.refraction.index_of_refraction, hit_info.hit.normal, -hit_cos)
+    } else {
+        // Sth else into air
+        get_refr_ray(hit_info.mat.refraction.index_of_refraction, T::one(), (-hit_info.hit.normal).into_normalized(), hit_cos)
+    };
+
+    // Special case for perfect refraction: We only need to send out a single ray
+    if hit_info.mat.refraction.max_angle.is_zero() {
+
+        *output += raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+
+    } else {
+        unimplemented!()
+    }
 }
 
 fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
