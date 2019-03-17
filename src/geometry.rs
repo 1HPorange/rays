@@ -8,7 +8,19 @@ pub struct Sphere<T> {
 
     pub center: Vec3<T>,
     pub radius: T,
-    pub material_provider: Box<HasMaterial<T>>
+    pub material_provider: Box<HasMaterial<T>> // TODO: Rename this atrocious trait
+
+}
+
+impl<'a, T> Sphere<T> {
+
+    pub fn new(center: Vec3<T>, radius: T, material_provider: Box<HasMaterial<T>>) -> Sphere<T> {
+        Sphere {
+            center,
+            radius,
+            material_provider
+        }
+    }
 
 }
 

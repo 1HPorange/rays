@@ -18,7 +18,10 @@ use output::*;
 
 fn main() {
 
-    let scene = create_scene_desc();
+    let scene = Scene {
+        objects: create_geometry(),
+        // Sky
+    };
 
     let camera = create_camera();
 
@@ -31,102 +34,34 @@ fn main() {
     save_to_file(&render_target);
 }
 
-// Abstract program flow. Usually you won't have to touch this
-
-fn create_scene_desc() -> Scene<f64> {
-
-    let scene = Scene {
-        objects: create_geometry()
-    };
-
-    //set_sky(&mut scene);
-
-    scene
-}
-
 // Customize scene and camera setup inside the functions below
 //////////////////////////////////////////////////////////////
 
 fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
-    let orange = Sphere { 
-        center: Vec3(-0.5, 3.0, 5.0),
-        radius: 3.0,
-        material_provider: Box::new(StaticMaterialProvider(Material {
-            color: RGBColor {
-                r: 1.0,
-                g: 0.9,
-                b: 1.0
-            }, 
-            transparency: Transparency {
-                opacity_center: 0.05,
-                opacity_edges: 1.0,
-                edge_effect_power: 2.0
-            },
-            reflection: ReflectionParams {
-                intensity_center: 0.0,
-                intensity_edges: 1.0,
-                edge_effect_power: 5.0,
-                max_angle: 5.0
-            },
-            refraction: RefractionParams {
-                index_of_refraction: 1.33,
-                max_angle: 2.5
-            }}))
-    };
+    let mat_refract = Material::new(
+        RGBColor::new(1.0, 0.9, 1.0),
+        Transparency::new(0.05, 1.0, 2.0),
+        ReflectionParams::new(0.0, 1.0, 5.0, 5.0),
+        RefractionParams::new(1.33, 2.5));
 
-    let blue = Sphere { 
-        center: Vec3(4.0, 7.0, 14.0),
-        radius: 7.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
-            RGBColor {
-                r: 0.0,
-                g: 0.1,
-                b: 0.2
-            }, 
-            ReflectionParams {
-                intensity_center: 0.025,
-                intensity_edges: 1.0,
-                edge_effect_power: 4.0,
-                max_angle: 0.0
-            })))
-    };
+    let mat_blue_reflect = Material::opaque_reflective(
+        RGBColor::new(0.0, 0.1, 0.2), 
+        ReflectionParams::new(0.025, 1.0, 4.0, 0.0));
 
-    let red = Sphere { 
-        center: Vec3(-6.0, 4.0, 10.0),
-        radius: 4.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
-            RGBColor {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0,
-            }, 
-            ReflectionParams {
-                intensity_center: 0.65,
-                intensity_edges: 0.9,
-                edge_effect_power: 2.0,
-                max_angle: 90.0
-            })))
-    };
+    let mat_red_diffuse = Material::opaque_reflective(
+        RGBColor::new(1.0, 0.0, 0.0), 
+        ReflectionParams::new(0.65, 0.9, 2.0, 90.0));
 
-    let red2 = Sphere { 
-        center: Vec3(-9.5, 8.0, 10.0),
-        radius: 4.0,
-        material_provider: Box::new(StaticMaterialProvider(Material::opaque_reflective(
-            RGBColor {
-                r: 1.0,
-                g: 0.0,
-                b: 0.0,
-            }, 
-            ReflectionParams {
-                intensity_center: 0.65,
-                intensity_edges: 0.9,
-                edge_effect_power: 2.0,
-                max_angle: 90.0
-            })))
-    };
+    let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticMaterialProvider(mat_refract)));
 
-    vec![Box::new(orange), Box::new(blue), Box::new(red), Box::new(red2)]
+    let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticMaterialProvider(mat_blue_reflect)));
+
+    let back_left_lower = Sphere::new(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticMaterialProvider(mat_red_diffuse)));
+
+    let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 4.0, Box::new(StaticMaterialProvider(mat_red_diffuse)));
+
+    vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper)]
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {

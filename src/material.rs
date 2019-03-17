@@ -1,6 +1,7 @@
 use super::color::*;
 use super::raytracing::*;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Material<T> {
     pub color: RGBColor, // alpha determines how many rays pass through the material and are potentially refracted
     pub transparency: Transparency,
@@ -8,25 +9,37 @@ pub struct Material<T> {
     pub refraction: RefractionParams<T>,
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct Transparency {
     pub opacity_center: f32,
     pub opacity_edges: f32,
     pub edge_effect_power: f32
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct ReflectionParams<T> {
     pub intensity_center: f32,
     pub intensity_edges: f32,
     pub edge_effect_power: f32,
-    pub max_angle: T,
+    pub max_angle: T
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct RefractionParams<T> {
     pub index_of_refraction: T,
     pub max_angle: T,
 }
 
 impl<T> Material<T> {
+
+    pub fn new(color: RGBColor, transparency: Transparency, reflection: ReflectionParams<T>, refraction: RefractionParams<T>) -> Material<T> {
+        Material {
+            color,
+            transparency,
+            reflection,
+            refraction
+        }
+    }
 
     pub fn opaque_reflective(color: RGBColor, reflection: ReflectionParams<T>) -> Material<T> where T: num_traits::Float {
         Material {
@@ -36,6 +49,30 @@ impl<T> Material<T> {
             refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }
     }
+}
+
+impl Transparency {
+
+    pub fn new(opacity_center: f32, opacity_edges: f32, edge_effect_power: f32) -> Transparency {
+        Transparency { opacity_center, opacity_edges, edge_effect_power }
+    }
+
+}
+
+impl<T> ReflectionParams<T> {
+
+    pub fn new(intensity_center: f32, intensity_edges: f32, edge_effect_power: f32, max_angle: T) -> ReflectionParams<T> {
+        ReflectionParams { intensity_center, intensity_edges, edge_effect_power, max_angle }
+    }
+
+}
+
+impl<T> RefractionParams<T> {
+
+    pub fn new(index_of_refraction: T, max_angle: T) -> RefractionParams<T> {
+        RefractionParams { index_of_refraction, max_angle }
+    }
+
 }
 
 pub trait HasMaterial<T>: Send + Sync {
