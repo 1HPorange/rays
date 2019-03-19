@@ -8,7 +8,7 @@ pub struct Vec3<T>(pub T, pub T, pub T);
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3Norm<T>(Vec3<T>);
 
-const EPSILON: f64 = 0.00001;
+pub const EPSILON: f64 = 0.00001;
 
 // TODO: Move these constants somewhere smarter
 pub const DEG_2_RAD: f64 = 0.0174532925199433;
@@ -46,7 +46,8 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn into_normalized(self) -> Vec3Norm<T> {
 
-        assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");
+        // let discrepancy: f32 = num_traits::NumCast::from(self.length() - T::one()).unwrap();
+        assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");// (Discrepancy: {})", discrepancy);
 
         Vec3Norm(self)
     }

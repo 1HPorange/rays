@@ -12,7 +12,7 @@ pub struct Sphere<T> {
 
 }
 
-impl<'a, T> Sphere<T> {
+impl<T> Sphere<T> {
 
     pub fn new(center: Vec3<T>, radius: T, material_provider: Box<HasMaterial<T>>) -> Sphere<T> {
         Sphere {
@@ -76,6 +76,65 @@ impl<T> RayTarget<T> for Sphere<T> where
 }
 
 impl<T> HasMaterialProvider<T> for Sphere<T> {
+
+    fn get_material_provider(&self) -> &Box<HasMaterial<T>> {
+        &self.material_provider
+    }
+
+}
+
+// Infinite Plane
+
+pub struct InifinitePlane<T> {
+    pub origin: Vec3<T>,
+    pub normal: Vec3Norm<T>,
+    pub material_provider: Box<HasMaterial<T>>
+}
+
+impl<T> InifinitePlane<T> {
+
+    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, material_provider: Box<HasMaterial<T>>) -> InifinitePlane<T> {
+        InifinitePlane {
+            origin,
+            normal,
+            material_provider
+        }
+    }
+
+}
+
+impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
+
+    fn  test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>> {
+
+        let cos_ray_to_plane = self.normal.dot(ray.direction);
+
+        if cos_ray_to_plane < -T::from(EPSILON).unwrap() {
+
+            // angle larger 90 deg, so they have to meet at some point
+
+            let plane_origin_to_ray_origin = ray.origin - self.origin;
+            let plane_origin_distance_to_ray_origin = plane_origin_to_ray_origin.dot(self.normal);
+
+            if plane_origin_distance_to_ray_origin > T::zero() {
+
+                let ray_origin_to_plane_intersection_distance = plane_origin_distance_to_ray_origin / -cos_ray_to_plane;
+
+                // Ray origin is not behind plane
+                let hitpoint = ray.origin + ray.direction * ray_origin_to_plane_intersection_distance;
+
+                return Option::Some(GeometryHitInfo {
+                    position: hitpoint,
+                    normal: self.normal
+                })
+            }
+        }
+            
+        Option::None
+    }
+}
+
+impl<T> HasMaterialProvider<T> for InifinitePlane<T> {
 
     fn get_material_provider(&self) -> &Box<HasMaterial<T>> {
         &self.material_provider

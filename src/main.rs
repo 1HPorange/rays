@@ -41,7 +41,7 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let mat_refract = Material::new(
         RGBColor::new(1.0, 0.9, 1.0),
-        Transparency::new(0.05, 1.0, 2.0),
+        Transparency::new(0.05, 0.6, 2.0),
         ReflectionParams::new(0.0, 1.0, 5.0, 5.0),
         RefractionParams::new(1.33, 2.5));
 
@@ -51,7 +51,11 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let mat_red_diffuse = Material::opaque_reflective(
         RGBColor::new(1.0, 0.0, 0.0), 
-        ReflectionParams::new(0.65, 0.9, 2.0, 90.0));
+        ReflectionParams::new(0.35, 0.6, 2.0, 90.0));
+
+    let mat_white_reflect = Material::opaque_reflective(
+        RGBColor::WHITE, 
+        ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
 
     let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticMaterialProvider(mat_refract)));
 
@@ -61,7 +65,9 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 4.0, Box::new(StaticMaterialProvider(mat_red_diffuse)));
 
-    vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper)]
+    let floor = InifinitePlane::new(Vec3(0.0,0.0,0.0), Vec3::normalized(0.0, 1.0, 0.0), Box::new(StaticMaterialProvider(mat_white_reflect)));
+
+    vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper), Box::new(floor)]
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
@@ -84,7 +90,7 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
         max_refract_rays: 4,
         max_dof_rays: 30,
         ao_strength: 0.8,
-        ao_distance: T::from(3.0).unwrap(),
+        ao_distance: T::from(2.0).unwrap(),
         ao_rays: 4,
         float_correction_bias: T::from(0.001).unwrap()
     }

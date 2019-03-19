@@ -238,7 +238,7 @@ fn apply_ao<T,R>(intensity: &mut f32, rng: &mut R, params: &RaytraceParameters<T
 
     // Generate ray cone with full spread
     let origin = hit.position + hit.normal * params.render_params.float_correction_bias;
-    let directions = gen_sample_ray_cone(rng, T::from(90).unwrap(), params.render_params.ao_rays, hit.normal, hit.normal);
+    let directions = gen_sample_ray_cone(rng, T::from(90.0).unwrap(), params.render_params.ao_rays, hit.normal, hit.normal);
 
     let closest = directions.into_iter()
         .flat_map(|direction| get_closest_hit(params, &Ray { origin, direction }))
@@ -369,7 +369,8 @@ fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_nor
             v.reorient_y_axis(reorient_axis)
         })
         .filter(move |v| v.dot(cutoff_normal) > T::zero()) // Filter out the ones that penetrate the geometry
-        .map(|v| v.into_normalized())
+        //.map(|v| v.into_normalized()) // TODO: Look why this sometimes fails, or use this:
+        .map(|v| v.normalize())
         .collect::<Vec<_>>()
 }
 
@@ -451,23 +452,9 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
         t *= 2.0;
         t = t.min(1.0);
 
-        return RGBColor::EVENING_BLUE * (1.0 - t) + RGBColor::BLACK * t
-    }
-
-    let t = -ray.origin.y() / ray.direction.y();
-
-    let dumb = (ray.origin + ray.direction * t) * T::from(0.2).unwrap() + Vec3::one() * T::from(1000.0).unwrap();
-
-    let x: i32 = num_traits::NumCast::from(dumb.x()).unwrap_or(35);
-    let z: i32 = num_traits::NumCast::from(dumb.z()).unwrap_or(42);
-
-    let a = x & 1 == 0;
-    let b = z & 1 == 0;
-
-    if a != b {
-        RGBColor::WHITE * 0.8
+        RGBColor::EVENING_BLUE * (1.0 - t) + RGBColor::WHITE * t
     } else {
-        RGBColor::BLACK
+        RGBColor::PINK
     }
 }
 
