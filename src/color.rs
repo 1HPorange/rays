@@ -40,11 +40,14 @@ impl From<RGBColor> for [u8;3] {
 
 }
 
-impl<S> std::ops::Mul<S> for RGBColor where f32: std::ops::Mul<S, Output=f32>, S: Copy {
+impl<S> std::ops::Mul<S> for RGBColor where S: num_traits::Float {
 
     type Output = RGBColor;
 
     fn mul(self, rhs: S) -> Self::Output {
+
+        let rhs: f32 = num_traits::NumCast::from(rhs).unwrap();
+
         RGBColor {
             r: self.r * rhs,
             g: self.g * rhs,

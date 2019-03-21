@@ -6,22 +6,41 @@ use super::material::*;
 
 pub struct Sphere<T> {
 
-    pub center: Vec3<T>,
-    pub radius: T,
-    pub uv_mapper: Box<UvMapper<T>>
+    center: Vec3<T>,
+    radius: T,
+    uv_mapper: Box<UvMapper<T>>,
 
+    up: Vec3Norm<T>,
+    right: Vec3Norm<T>
 }
 
-impl<T> Sphere<T> {
+impl<T> Sphere<T> where T: num_traits::Float {
 
-    pub fn new(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>) -> Sphere<T> {
+    pub fn new(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>, up: Vec3Norm<T>, right: Vec3Norm<T>) -> Sphere<T> {
+
+        assert!(up.dot(right) < T::epsilon());
+
         Sphere {
             center,
             radius,
-            uv_mapper
+            uv_mapper,
+            up,
+            right
         }
     }
 
+    pub fn with_random_right(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>, up: Vec3Norm<T>) -> Sphere<T> {
+
+        let right = up.get_random_90_deg_vector().normalize();
+
+        Sphere {
+            center,
+            radius,
+            uv_mapper,
+            up,
+            right
+        }
+    }
 }
 
 impl<T> RayTarget<T> for Sphere<T> where 
@@ -68,6 +87,9 @@ impl<T> RayTarget<T> for Sphere<T> where
         };
         let normal = ((hitpoint - self.center) / self.radius).into_normalized();
 
+        // Calculate uvs with help of https://www.mathworks.com/matlabcentral/answers/16243-angle-between-two-vectors-in-3d
+        //let angle_to_up = 
+
         Option::Some(GeometryHitInfo {
             position: hitpoint,
             normal,
@@ -108,7 +130,7 @@ impl<T> InifinitePlane<T> where T: num_traits::Float {
     pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, right: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
 
         // Normal and right Vector have to be at right angles
-        assert!(normal.dot(right) < T::from(EPSILON).unwrap());
+        assert!(normal.dot(right) < T::epsilon());
 
         let up = normal.cross(right).normalize();
 
@@ -144,7 +166,7 @@ impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
 
         let cos_ray_to_plane = self.normal.dot(ray.direction);
 
-        if cos_ray_to_plane < -T::from(EPSILON).unwrap() {
+        if cos_ray_to_plane < -T::epsilon() {
 
             // angle larger 90 deg, so they have to meet at some point
 

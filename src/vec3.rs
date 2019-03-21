@@ -10,12 +10,13 @@ pub struct Vec2<T>(pub T, pub T);
 pub struct Vec3<T>(pub T, pub T, pub T);
 
 #[derive(Debug, Copy, Clone)]
-pub struct Vec3Norm<T>(Vec3<T>);
+pub struct Vec3Norm<T>(pub T, pub T, pub T);
 
-pub const EPSILON: f64 = 0.00001;
+/// Use this if the normal T::epsilon() is too small
+const BIG_EPSILON: f64 = 0.00001;
 
 // TODO: Move these constants somewhere smarter
-pub const DEG_2_RAD: f64 = 0.0174532925199433;
+//pub const DEG_2_RAD: f64 = 0.0174532925199433;
 //pub const RAD_2_DEG: f64 = 57.2957795130823;
 
 impl<T> Vec3<T> where T: num_traits::Float {
@@ -29,7 +30,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
     } 
 
     pub fn is_unit_length(&self) -> bool {
-        (self.sqr_length() - T::one()).abs() < T::from(EPSILON).unwrap()
+        (self.sqr_length() - T::one()).abs() < T::from(BIG_EPSILON).unwrap()
     }
 
     pub fn normalized(x: T, y: T, z: T) -> Vec3Norm<T> {
@@ -38,14 +39,16 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
         assert!(v.is_unit_length(), "Cannot construct normalized vector that is not unit length");
 
-        Vec3Norm(v)
+        Vec3Norm(x, y, z)
     }
 
     pub fn normalize(self) -> Vec3Norm<T> {
 
         assert!(!self.is_zero(), "Cannot normalize zero length vector");
 
-        Vec3Norm(self / self.length())
+        let norm = self / self.length();
+
+        Vec3Norm(norm.0, norm.1, norm.2)
     }
 
     pub fn into_normalized(self) -> Vec3Norm<T> {
@@ -53,14 +56,14 @@ impl<T> Vec3<T> where T: num_traits::Float {
         // let discrepancy: f32 = num_traits::NumCast::from(self.length() - T::one()).unwrap();
         assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");// (Discrepancy: {})", discrepancy);
 
-        Vec3Norm(self)
+        Vec3Norm(self.0, self.1, self.2)
     }
 
     // TODO: Make these function not mutate self. Then they can move into vecview
 
     pub fn rotate_x(&mut self, mut deg: T) {
 
-        deg = deg * T::from(DEG_2_RAD).unwrap();
+        deg = deg.to_radians();
 
         let old = *self;
 
@@ -70,7 +73,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn rotate_y(&mut self, mut deg: T) {
 
-        deg = deg * T::from(DEG_2_RAD).unwrap();
+        deg = deg.to_radians();
 
         let old = *self;
 
@@ -80,13 +83,19 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn rotate_z(&mut self, mut deg: T) {
 
-        deg = deg * T::from(DEG_2_RAD).unwrap();
+        deg = deg.to_radians();
 
         let old = *self;
 
         self.0 = old.0 * deg.cos() - old.1 * deg.sin();
         self.1 = old.0 * deg.sin() + old.1 * deg.cos();
     }
+}
+
+impl<T> Vec3Norm<T> where T: num_traits::Float {
+
+    pub fn up() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::one(), T::zero()) }
+
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
@@ -170,6 +179,12 @@ pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
             self.x() * nx.z() + self.y() * ny.z() + self.z() * nz.z()
         )
     }
+
+    fn angle_to<V: Vec3View<T>>(self, v: V) -> T where T: num_traits::FloatConst {
+
+        self.cross(v).length().atan2(self.dot(v)).to_degrees()
+
+    }
 }
 
 impl<T> Vec3View<T> for Vec3<T> where T: num_traits::Float {
@@ -192,15 +207,15 @@ impl<T> Vec3View<T> for Vec3Norm<T> where T: num_traits::Float {
     // TODO: Remove this vector nesting so we can use macros to switch out Vec3 and Vec3Norm constructors for specialized return values
 
     fn x(&self) -> T {
-        self.0.x()
+        self.0
     }
 
     fn y(&self) -> T {
-        self.0.y()
+        self.1
     }
 
     fn z(&self) -> T {
-        self.0.z()
+        self.2
     }
 }
 
@@ -223,9 +238,9 @@ impl<T> From<Vec3Norm<T>> for Vec3<T> where Vec3Norm<T>: Vec3View<T>, T: num_tra
 
     fn from(v: Vec3Norm<T>) -> Vec3<T> {
         Vec3(
-            v.0.x(),
-            v.0.y(),
-            v.0.z()
+            v.0,
+            v.1,
+            v.2
         )
     }
 

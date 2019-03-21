@@ -74,15 +74,15 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
                 let br = self.pixels[x_right + y_bottom * self.tex_width];
 
                 // Horizontal and Vertical Interpolation variables
-                let th: f32 = num_traits::NumCast::from(w.fract()).unwrap();
-                let tv: f32 = num_traits::NumCast::from(h.fract()).unwrap();
+                let th = w.fract();
+                let tv = h.fract();
 
                 // Interpolate horizontally
-                let ct = tl * (1.0 - th) + tr * th;
-                let cb = bl * (1.0 - th) + br * th;
+                let ct = tl * (T::one() - th) + tr * th;
+                let cb = bl * (T::one() - th) + br * th;
 
                 // Interpolate vertically
-                ct * (1.0 - tv) + cb * tv
+                ct * (T::one() - tv) + cb * tv
             }
 
         };

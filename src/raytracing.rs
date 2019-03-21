@@ -34,14 +34,14 @@ pub struct GeometryHitInfo<T> {
 }
 
 pub struct RenderingParameters<T> {
-    pub min_intensity: f32,
+    pub min_intensity: T,
     pub max_bounces: i32,
     pub max_reflect_rays: i32,
     pub max_refract_rays: i32,
     pub max_dof_rays: i32,
 
-    // TODO: MOve to AO struct
-    pub ao_strength: f32,
+    // TODO: Move to AO struct
+    pub ao_strength: T,
     pub ao_distance: T,
     pub ao_rays: i32,
 
@@ -62,11 +62,11 @@ struct HitInfo<'a, T> {
     hit: &'a GeometryHitInfo<T>, 
     ray: &'a Ray<T>, 
     bounces: i32, 
-    intensity: f32
+    intensity: T
 }
 
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters<T>) where 
-    T: num_traits::Float + Send + Sync {
+    T: num_traits::Float + num_traits::FloatConst + Send + Sync {
 
     let raytrace_params = RaytraceParameters {
         scene,
@@ -124,13 +124,13 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
                     &raytrace_params,
                     &mut rng,
                     Ray { origin, direction }, 
-                    0, 1.0)
+                    0, T::one())
 
             } else {
 
                 let mut color = RGBColor::BLACK;
 
-                let ray_influence = 1.0 / (render_params.max_dof_rays as f32);
+                let ray_influence = T::one() / T::from(render_params.max_dof_rays).unwrap();
 
                 for _ in 0..render_params.max_dof_rays {
 
@@ -140,7 +140,7 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
                         &raytrace_params,
                         &mut rng,
                         Ray { origin, direction }, 
-                        0, 1.0)
+                        0, T::one())
                     * ray_influence;
 
                 }
@@ -197,9 +197,9 @@ fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, f
     direction.into_normalized()
 }
 
-fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: f32) -> RGBColor where 
+fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: T) -> RGBColor where 
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
-    T: num_traits::Float,
+    T: num_traits::Float + num_traits::FloatConst,
     R: Rng + ?Sized {
 
     let closest_hit = get_closest_hit(params, &ray);
@@ -211,10 +211,10 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
         let mat = uv_mapper.get_material_at(&hit);
 
         // Intensity scale factor based on lighting effects
-        let mut intensity_scale: f32 = 1.0;
+        let mut intensity_scale = T::one();
 
         // Ambient Occlusion
-        if params.render_params.ao_strength > 0.0 {
+        if !params.render_params.ao_strength.is_zero() {
 
             apply_ao(&mut intensity_scale, rng, params, &hit);
         }
@@ -233,7 +233,7 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
     }
 }
 
-fn apply_ao<T,R>(intensity: &mut f32, rng: &mut R, params: &RaytraceParameters<T>, hit: &GeometryHitInfo<T>) where 
+fn apply_ao<T,R>(intensity: &mut T, rng: &mut R, params: &RaytraceParameters<T>, hit: &GeometryHitInfo<T>) where 
     T: num_traits::Float,
     R: Rng + ?Sized {
 
@@ -250,11 +250,10 @@ fn apply_ao<T,R>(intensity: &mut f32, rng: &mut R, params: &RaytraceParameters<T
     if let Some((_, hit)) = closest {
         
         let distance_normalized = ((hit.position - origin).length() / params.render_params.ao_distance).min(T::one());
-        let distance_normalized: f32 = num_traits::NumCast::from(distance_normalized).unwrap();
 
-        let ao_strength = (1.0 - distance_normalized).powf(2.0) * params.render_params.ao_strength;
+        let ao_strength = (T::one() - distance_normalized).powf(T::from(2.0).unwrap()) * params.render_params.ao_strength;
 
-        *intensity *= 1.0 - ao_strength;
+        *intensity = *intensity * (T::one() - ao_strength);
     }
 }
 
@@ -271,32 +270,32 @@ fn get_closest_hit<'a, T>(params: &'a RaytraceParameters<T>, ray: &Ray<T>) -> Op
 }
 
 fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>) -> RGBColor where 
-    T: num_traits::Float, 
+    T: num_traits::Float + num_traits::FloatConst, 
     R: Rng + ?Sized {
     
     // Calculate the angle of incidence and it's steepness
-    let rev_incoming_dot_normal: f32 = num_traits::NumCast::from((-hit_info.ray.direction).dot(hit_info.hit.normal)).unwrap();
-    let incidence_angle_steepness = 1.0 - (rev_incoming_dot_normal.acos() / std::f32::consts::FRAC_PI_2 - 1.0).abs();
+    let rev_incoming_dot_normal = (-hit_info.ray.direction).dot(hit_info.hit.normal);
+    let incidence_angle_steepness = T::one() - (rev_incoming_dot_normal.acos() / T::FRAC_PI_2() - T::one()).abs();
     
     // Calculate the effect of the angle of incidence on reflectivity
     let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
     let scaled_reflection_intensity = 
-        (1.0 - incidence_reflection_influence)  * hit_info.mat.reflection.intensity_center + 
+        (T::one() - incidence_reflection_influence)  * hit_info.mat.reflection.intensity_center + 
         incidence_reflection_influence          * hit_info.mat.reflection.intensity_edges;
 
     // Calculate the effect of the angle of incidence on refraction (object alpha)
     let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.opacity.edge_effect_power);
     let scaled_alpha = 
-        (1.0 - incidence_alpha_influence)       * hit_info.mat.opacity.opacity_center +
+        (T::one() - incidence_alpha_influence)       * hit_info.mat.opacity.opacity_center +
         incidence_alpha_influence               * hit_info.mat.opacity.opacity_edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;
 
     // Calculate intensities of color, reflection and refraction
-    let mat_color_intensity = scaled_alpha * (1.0 - scaled_reflection_intensity);
+    let mat_color_intensity = scaled_alpha * (T::one() - scaled_reflection_intensity);
     let total_reflection_intensity = scaled_alpha * scaled_reflection_intensity;
-    let total_refraction_intensity = 1.0 - scaled_alpha;
+    let total_refraction_intensity = T::one() - scaled_alpha;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
     let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
@@ -319,8 +318,8 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     output
 }
 
-fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where 
-    T: num_traits::Float,
+fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: T, output: &mut RGBColor) where 
+    T: num_traits::Float + num_traits::FloatConst,
     R: Rng + ?Sized {
 
     // Origin of all reflected rays including bias
@@ -338,7 +337,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays, hit_info.hit.normal, direction);
 
-        let ray_intensity = total_intensity / (ray_directions.len() as f32);
+        let ray_intensity = total_intensity / T::from(ray_directions.len()).unwrap();
 
         for dir in ray_directions {
 
@@ -375,8 +374,8 @@ fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_nor
         .collect::<Vec<_>>()
 }
 
-fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: f32, output: &mut RGBColor) where 
-    T: num_traits::Float,
+fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: T, output: &mut RGBColor) where 
+    T: num_traits::Float + num_traits::FloatConst,
     R: Rng + ?Sized {
     
     // This closure is magic and was stolen from:
@@ -428,7 +427,7 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, params.render_params.max_refract_rays, cutoff_normal, refr_ray.direction);
 
-        let ray_intensity = total_intensity / (directions.len() as f32);
+        let ray_intensity = total_intensity / T::from(directions.len()).unwrap();
 
         for dir in directions {
 
@@ -449,11 +448,11 @@ fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
 
     if ray.direction.y() >= T::zero() {
 
-        let mut t: f32 = num_traits::NumCast::from(ray.direction.y()).unwrap();
-        t *= 2.0;
-        t = t.min(1.0);
+        let mut t= ray.direction.y();
+        t = t + t;
+        t = t.min(T::one());
 
-        RGBColor::EVENING_BLUE * (1.0 - t) + RGBColor::WHITE * t
+        RGBColor::EVENING_BLUE * (T::one() - t) + RGBColor::WHITE * t
     } else {
         RGBColor::PINK
     }

@@ -76,17 +76,17 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
     let alan_mapper = TextureUvMapper::from_png_24("D:/Downloads/mario.png", mat_black, SamplingMethod::BILINEAR)
         .expect("Could not load Alan. Won't work without him!");
 
-    let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)));
+    let front = Sphere::with_random_right(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)), Vec3Norm::up());
 
-    let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticUvMapper(mat_very_reflective)));
+    let back_right = Sphere::with_random_right(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticUvMapper(mat_very_reflective)), Vec3Norm::up());
 
-    let back_left_lower = Sphere::new(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)));
+    let back_left_lower = Sphere::with_random_right(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)), Vec3Norm::up());
 
-    let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 6.0, Box::new(StaticUvMapper(mat_glass)));
+    let back_left_upper = Sphere::with_random_right(Vec3(-9.5, 8.0, 10.0), 6.0, Box::new(StaticUvMapper(mat_glass)), Vec3Norm::up());
 
     let floor = InifinitePlane::with_random_right(
         Vec3(0.0,0.0,0.0), 
-        Vec3::normalized(0.0, 1.0, 0.0), 
+        Vec3Norm::up(), 
         Box::new(alan_mapper), 
         0.1);
 
@@ -106,13 +106,14 @@ fn create_render_target() -> RenderTarget {
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
 
+    // TODO: Move into new function
     RenderingParameters { 
-        min_intensity: 0.0, 
+        min_intensity: T::zero(), 
         max_bounces: 2, 
         max_reflect_rays: 2,
         max_refract_rays: 2,
         max_dof_rays: 20,
-        ao_strength: 0.8,
+        ao_strength: T::from(0.8).unwrap(),
         ao_distance: T::from(2.0).unwrap(),
         ao_rays: 3,
         float_correction_bias: T::from(0.001).unwrap()

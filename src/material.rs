@@ -1,26 +1,28 @@
 use super::color::*;
 use super::raytracing::*;
 
+// TODO: Supply useful default values for all these things
+
 #[derive(Debug, Copy, Clone)]
 pub struct Material<T> {
     pub color: RGBColor, // alpha determines how many rays pass through the material and are potentially refracted
-    pub opacity: Opacity,
+    pub opacity: Opacity<T>,
     pub reflection: ReflectionParams<T>,
     pub refraction: RefractionParams<T>,
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Opacity {
-    pub opacity_center: f32,
-    pub opacity_edges: f32,
-    pub edge_effect_power: f32
+pub struct Opacity<T> {
+    pub opacity_center: T,
+    pub opacity_edges: T,
+    pub edge_effect_power: T
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct ReflectionParams<T> {
-    pub intensity_center: f32,
-    pub intensity_edges: f32,
-    pub edge_effect_power: f32,
+    pub intensity_center: T,
+    pub intensity_edges: T,
+    pub edge_effect_power: T,
     pub max_angle: T
 }
 
@@ -34,7 +36,7 @@ impl<T> Material<T> {
 
     // TODO: Use new constructors of all member in here, not struct initializers
 
-    pub fn new(color: RGBColor, opacity: Opacity, reflection: ReflectionParams<T>, refraction: RefractionParams<T>) -> Material<T> {
+    pub fn new(color: RGBColor, opacity: Opacity<T>, reflection: ReflectionParams<T>, refraction: RefractionParams<T>) -> Material<T> {
         Material {
             color,
             opacity,
@@ -46,7 +48,7 @@ impl<T> Material<T> {
     pub fn opaque_reflective(color: RGBColor, reflection: ReflectionParams<T>) -> Material<T> where T: num_traits::Float {
         Material {
             color,
-            opacity: Opacity { opacity_center: 1.0, opacity_edges: 1.0, edge_effect_power: 1.0 },
+            opacity: Opacity { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
             reflection,
             refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }
@@ -55,16 +57,16 @@ impl<T> Material<T> {
     pub fn pure(color: RGBColor) -> Material<T> where T: num_traits::Float {
         Material {
             color,
-            opacity: Opacity { opacity_center: 1.0, opacity_edges: 1.0, edge_effect_power: 1.0 },
-            reflection: ReflectionParams::new(0.0, 0.0, 1.0, T::zero()),
+            opacity: Opacity { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
+            reflection: ReflectionParams::new(T::zero(), T::zero(), T::one(), T::zero()),
             refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }
     }
 }
 
-impl Opacity {
+impl<T> Opacity<T> {
 
-    pub fn new(opacity_center: f32, opacity_edges: f32, edge_effect_power: f32) -> Opacity {
+    pub fn new(opacity_center: T, opacity_edges: T, edge_effect_power: T) -> Opacity<T> {
         Opacity { opacity_center, opacity_edges, edge_effect_power }
     }
 
@@ -72,7 +74,7 @@ impl Opacity {
 
 impl<T> ReflectionParams<T> {
 
-    pub fn new(intensity_center: f32, intensity_edges: f32, edge_effect_power: f32, max_angle: T) -> ReflectionParams<T> {
+    pub fn new(intensity_center: T, intensity_edges: T, edge_effect_power: T, max_angle: T) -> ReflectionParams<T> {
         ReflectionParams { intensity_center, intensity_edges, edge_effect_power, max_angle }
     }
 
