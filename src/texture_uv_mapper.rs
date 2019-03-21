@@ -18,12 +18,13 @@ pub struct TextureUvMapper<T> {
     base_mat: Material<T>,
     pixels: Vec<RGBColor>,
     tex_width: usize,
-    tex_height: usize
+    tex_height: usize,
+    sampling_method: SamplingMethod
 }
 
 impl <T> TextureUvMapper<T> {
 
-    pub fn from_png_24<P: AsRef<Path>>(filepath: P, base_mat: Material<T>) -> Result<TextureUvMapper<T>, io::Error> {
+    pub fn from_png_24<P: AsRef<Path>>(filepath: P, base_mat: Material<T>, sampling_method: SamplingMethod) -> Result<TextureUvMapper<T>, io::Error> {
 
         let decoded = decode24_file(filepath).map_err(|e| io::Error::new(io::ErrorKind::Other, e.as_str()))?;
 
@@ -35,7 +36,8 @@ impl <T> TextureUvMapper<T> {
             base_mat,
             pixels,
             tex_width: decoded.width,
-            tex_height: decoded.height
+            tex_height: decoded.height,
+            sampling_method
         })
     }
 }
@@ -44,14 +46,49 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
 
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
 
-        let w = T::from(self.tex_width - 1).unwrap();
-        let h = T::from(self.tex_height - 1).unwrap();
+        let w = rch.uv.0 * T::from(self.tex_width - 1).unwrap();
+        let h = rch.uv.1 * T::from(self.tex_height - 1).unwrap();
 
-        let x: usize = num_traits::NumCast::from(rch.uv.0 * w).unwrap();
-        let y: usize = num_traits::NumCast::from(rch.uv.1 * h).unwrap();
+        let color = match self.sampling_method {
+
+            SamplingMethod::POINT => {
+                let x: usize = num_traits::NumCast::from(w.round()).unwrap();
+                let y: usize = num_traits::NumCast::from(h.round()).unwrap();
+
+                self.pixels[x + self.tex_width * y]
+            },
+
+            SamplingMethod::BILINEAR => {
+
+                // Get the four pixel coordinates needed for bilinear sampling
+                let x_left: usize = num_traits::NumCast::from(w.floor()).unwrap();
+                let x_right = x_left + 1;
+
+                let y_top: usize = num_traits::NumCast::from(h.floor()).unwrap();
+                let y_bottom = y_top + 1;
+
+                // The four colors we need to interpolate
+                let tl = self.pixels[x_left + y_top * self.tex_width];
+                let tr = self.pixels[x_right + y_top * self.tex_width];
+                let bl = self.pixels[x_left + y_bottom * self.tex_width];
+                let br = self.pixels[x_right + y_bottom * self.tex_width];
+
+                // Horizontal and Vertical Interpolation variables
+                let th: f32 = num_traits::NumCast::from(w.fract()).unwrap();
+                let tv: f32 = num_traits::NumCast::from(h.fract()).unwrap();
+
+                // Interpolate horizontally
+                let ct = tl * (1.0 - th) + tr * th;
+                let cb = bl * (1.0 - th) + br * th;
+
+                // Interpolate vertically
+                ct * (1.0 - tv) + cb * tv
+            }
+
+        };
 
         Material {
-            color: self.pixels[x + self.tex_width * y],
+            color,
             ..self.base_mat
         }
     }

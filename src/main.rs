@@ -73,7 +73,7 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         ReflectionParams::new(1.0, 1.0, 1.0, 0.0),
         RefractionParams::new(1.33, 0.0));
 
-    let alan_mapper = TextureUvMapper::from_png_24("D:/Downloads/alan.png", mat_black)
+    let alan_mapper = TextureUvMapper::from_png_24("D:/Downloads/mario.png", mat_black, SamplingMethod::BILINEAR)
         .expect("Could not load Alan. Won't work without him!");
 
     let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)));
