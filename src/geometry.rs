@@ -8,17 +8,17 @@ pub struct Sphere<T> {
 
     pub center: Vec3<T>,
     pub radius: T,
-    pub material_provider: Box<HasMaterial<T>> // TODO: Rename this atrocious trait
+    pub uv_mapper: Box<UvMapper<T>>
 
 }
 
 impl<T> Sphere<T> {
 
-    pub fn new(center: Vec3<T>, radius: T, material_provider: Box<HasMaterial<T>>) -> Sphere<T> {
+    pub fn new(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>) -> Sphere<T> {
         Sphere {
             center,
             radius,
-            material_provider
+            uv_mapper
         }
     }
 
@@ -75,10 +75,10 @@ impl<T> RayTarget<T> for Sphere<T> where
     }
 }
 
-impl<T> HasMaterialProvider<T> for Sphere<T> {
+impl<T> HasUvMapper<T> for Sphere<T> {
 
-    fn get_material_provider(&self) -> &Box<HasMaterial<T>> {
-        &self.material_provider
+    fn get_uv_mapper(&self) -> &Box<UvMapper<T>> {
+        &self.uv_mapper
     }
 
 }
@@ -88,16 +88,16 @@ impl<T> HasMaterialProvider<T> for Sphere<T> {
 pub struct InifinitePlane<T> {
     pub origin: Vec3<T>,
     pub normal: Vec3Norm<T>,
-    pub material_provider: Box<HasMaterial<T>>
+    pub uv_mapper: Box<UvMapper<T>>
 }
 
 impl<T> InifinitePlane<T> {
 
-    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, material_provider: Box<HasMaterial<T>>) -> InifinitePlane<T> {
+    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>) -> InifinitePlane<T> {
         InifinitePlane {
             origin,
             normal,
-            material_provider
+            uv_mapper
         }
     }
 
@@ -134,10 +134,10 @@ impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
     }
 }
 
-impl<T> HasMaterialProvider<T> for InifinitePlane<T> {
+impl<T> HasUvMapper<T> for InifinitePlane<T> {
 
-    fn get_material_provider(&self) -> &Box<HasMaterial<T>> {
-        &self.material_provider
+    fn get_uv_mapper(&self) -> &Box<UvMapper<T>> {
+        &self.uv_mapper
     }
 
 }

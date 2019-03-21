@@ -57,15 +57,15 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         RGBColor::WHITE, 
         ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
 
-    let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticMaterialProvider(mat_refract)));
+    let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)));
 
-    let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticMaterialProvider(mat_blue_reflect)));
+    let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticUvMapper(mat_blue_reflect)));
 
-    let back_left_lower = Sphere::new(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticMaterialProvider(mat_red_diffuse)));
+    let back_left_lower = Sphere::new(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)));
 
-    let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 4.0, Box::new(StaticMaterialProvider(mat_red_diffuse)));
+    let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)));
 
-    let floor = InifinitePlane::new(Vec3(0.0,0.0,0.0), Vec3::normalized(0.0, 1.0, 0.0), Box::new(StaticMaterialProvider(mat_white_reflect)));
+    let floor = InifinitePlane::new(Vec3(0.0,0.0,0.0), Vec3::normalized(0.0, 1.0, 0.0), Box::new(StaticUvMapper(mat_white_reflect)));
 
     vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper), Box::new(floor)]
 }
@@ -78,20 +78,20 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280, 720)
+    RenderTarget::new(1280/2, 720/2)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
 
     RenderingParameters { 
         min_intensity: 0.0, 
-        max_bounces: 3, 
-        max_reflect_rays: 4,
-        max_refract_rays: 4,
-        max_dof_rays: 30,
+        max_bounces: 2, 
+        max_reflect_rays: 2,
+        max_refract_rays: 2,
+        max_dof_rays: 20,
         ao_strength: 0.8,
         ao_distance: T::from(2.0).unwrap(),
-        ao_rays: 4,
+        ao_rays: 3,
         float_correction_bias: T::from(0.001).unwrap()
     }
 }

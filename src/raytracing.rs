@@ -205,9 +205,9 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
 
     if let Some((obj, hit)) = closest_hit {
 
-        let mat_provider = obj.get_material_provider();
+        let uv_mapper = obj.get_uv_mapper();
 
-        let mat = mat_provider.get_material_at(&hit);
+        let mat = uv_mapper.get_material_at(&hit);
 
         // Intensity scale factor based on lighting effects
         let mut intensity_scale: f32 = 1.0;

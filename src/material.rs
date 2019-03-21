@@ -75,23 +75,23 @@ impl<T> RefractionParams<T> {
 
 }
 
-pub trait HasMaterial<T>: Send + Sync {
+// UV (to material) mappers
+
+pub trait UvMapper<T>: Send + Sync {
     
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T>;
 
 }
 
-// Material providers
+pub trait HasUvMapper<T> {
 
-pub trait HasMaterialProvider<T> {
-
-    fn get_material_provider(&self) -> &Box<HasMaterial<T>>;
+    fn get_uv_mapper(&self) -> &Box<UvMapper<T>>;
 
 }
 
-pub struct StaticMaterialProvider<T>(pub Material<T>);
+pub struct StaticUvMapper<T>(pub Material<T>);
 
-impl<T> HasMaterial<T> for StaticMaterialProvider<T> where Self: Send + Sync {
+impl<T> UvMapper<T> for StaticUvMapper<T> where Self: Send + Sync {
 
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T> {
         &self.0
