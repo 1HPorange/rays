@@ -160,15 +160,15 @@ impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
 
                 // uv calculation
                 let orig_to_hitpoint = hitpoint - self.origin;
-                let mut uv_x = orig_to_hitpoint.dot(self.right) / self.uv_scale;
-                let mut uv_y = orig_to_hitpoint.dot(self.up) / self.uv_scale;
+                let mut uv_x = (orig_to_hitpoint.dot(self.right) * self.uv_scale).fract();
+                let mut uv_y = (orig_to_hitpoint.dot(self.up) * self.uv_scale).fract();
 
                 if uv_x < T::zero() {
-                    uv_x = uv_x - T::from(0.5).unwrap();
+                    uv_x = T::one() + uv_x;
                 }
 
                 if uv_y < T::zero() {
-                    uv_y = uv_y - T::from(0.5).unwrap();
+                    uv_y = T::one() + uv_y;
                 }
 
                 return Option::Some(GeometryHitInfo {

@@ -220,7 +220,7 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
         }
 
         let hit_info = HitInfo {
-            mat,
+            mat: &mat,
             hit: &hit,
             ray: &ray,
             bounces,
@@ -285,10 +285,10 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
         incidence_reflection_influence          * hit_info.mat.reflection.intensity_edges;
 
     // Calculate the effect of the angle of incidence on refraction (object alpha)
-    let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.transparency.edge_effect_power);
+    let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.opacity.edge_effect_power);
     let scaled_alpha = 
-        (1.0 - incidence_alpha_influence)       * hit_info.mat.transparency.opacity_center +
-        incidence_alpha_influence               * hit_info.mat.transparency.opacity_edges;
+        (1.0 - incidence_alpha_influence)       * hit_info.mat.opacity.opacity_center +
+        incidence_alpha_influence               * hit_info.mat.opacity.opacity_edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;
