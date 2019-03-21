@@ -70,7 +70,8 @@ impl<T> RayTarget<T> for Sphere<T> where
 
         Option::Some(GeometryHitInfo {
             position: hitpoint,
-            normal
+            normal,
+            uv: Vec2(T::zero(), T::zero()) // TODO: Implement. Also add an upAxis field to the sphere so the uvs can rotate
         })
     }
 }
@@ -86,21 +87,55 @@ impl<T> HasUvMapper<T> for Sphere<T> {
 // Infinite Plane
 
 pub struct InifinitePlane<T> {
-    pub origin: Vec3<T>,
-    pub normal: Vec3Norm<T>,
-    pub uv_mapper: Box<UvMapper<T>>
+    origin: Vec3<T>,
+    normal: Vec3Norm<T>,
+
+    /// Used for mapping the uv x direction
+    right: Vec3Norm<T>,
+    uv_mapper: Box<UvMapper<T>>,
+
+    /// A scale of one goes through one UV cycle per world unit.
+    /// Higher scales squeeze the uv mapping, while lower scales
+    /// stretch it.
+    uv_scale: T,
+
+    /// Calculated from normal and right. Helps with uv calculation
+    up: Vec3Norm<T>
 }
 
-impl<T> InifinitePlane<T> {
+impl<T> InifinitePlane<T> where T: num_traits::Float {
 
-    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>) -> InifinitePlane<T> {
+    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, right: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
+
+        // Normal and right Vector have to be at right angles
+        assert!(normal.dot(right) < T::from(EPSILON).unwrap());
+
+        let up = normal.cross(right).normalize();
+
         InifinitePlane {
             origin,
             normal,
-            uv_mapper
+            right,
+            uv_mapper,
+            uv_scale,
+            up
         }
     }
 
+    pub fn with_random_right(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
+
+        let right = normal.get_random_90_deg_vector().normalize();
+        let up = normal.cross(right).normalize();
+
+        InifinitePlane {
+            origin,
+            normal,
+            right,
+            uv_mapper,
+            uv_scale,
+            up
+        }
+    }
 }
 
 impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
@@ -123,9 +158,23 @@ impl<T> RayTarget<T> for InifinitePlane<T> where T: num_traits::Float {
                 // Ray origin is not behind plane
                 let hitpoint = ray.origin + ray.direction * ray_origin_to_plane_intersection_distance;
 
+                // uv calculation
+                let orig_to_hitpoint = hitpoint - self.origin;
+                let mut uv_x = orig_to_hitpoint.dot(self.right) / self.uv_scale;
+                let mut uv_y = orig_to_hitpoint.dot(self.up) / self.uv_scale;
+
+                if uv_x < T::zero() {
+                    uv_x = uv_x - T::from(0.5).unwrap();
+                }
+
+                if uv_y < T::zero() {
+                    uv_y = uv_y - T::from(0.5).unwrap();
+                }
+
                 return Option::Some(GeometryHitInfo {
                     position: hitpoint,
-                    normal: self.normal
+                    normal: self.normal,
+                    uv: Vec2(uv_x, uv_y)
                 })
             }
         }

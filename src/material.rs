@@ -32,6 +32,8 @@ pub struct RefractionParams<T> {
 
 impl<T> Material<T> {
 
+    // TODO: Use new constructors of all member in here, not struct initializers
+
     pub fn new(color: RGBColor, transparency: Transparency, reflection: ReflectionParams<T>, refraction: RefractionParams<T>) -> Material<T> {
         Material {
             color,
@@ -46,6 +48,15 @@ impl<T> Material<T> {
             color,
             transparency: Transparency { opacity_center: 1.0, opacity_edges: 1.0, edge_effect_power: 1.0 },
             reflection,
+            refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
+        }
+    }
+
+    pub fn pure(color: RGBColor) -> Material<T> where T: num_traits::Float {
+        Material {
+            color,
+            transparency: Transparency { opacity_center: 1.0, opacity_edges: 1.0, edge_effect_power: 1.0 },
+            reflection: ReflectionParams::new(0.0, 0.0, 1.0, T::zero()),
             refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
         }
     }
@@ -95,6 +106,25 @@ impl<T> UvMapper<T> for StaticUvMapper<T> where Self: Send + Sync {
 
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T> {
         &self.0
+    }
+
+}
+
+pub struct CheckerboardUvMapper<T>(pub Material<T>, pub Material<T>);
+
+impl<T> UvMapper<T> for CheckerboardUvMapper<T> where Self: Send + Sync, T: num_traits::Float {
+
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> &Material<T> {
+        
+        let half = T::from(0.5).unwrap();
+        let x = rch.uv.0.fract().abs() > half;
+        let y = rch.uv.1.fract().abs() > half;
+
+        if x != y {
+            &self.0
+        } else {
+            &self.1
+        }
     }
 
 }

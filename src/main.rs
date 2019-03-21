@@ -57,6 +57,10 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         RGBColor::WHITE, 
         ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
 
+    let mat_black = Material::opaque_reflective(
+        RGBColor::BLACK, 
+        ReflectionParams::new(0.25, 0.25, 1.0, 10.0));
+
     let front = Sphere::new(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)));
 
     let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(StaticUvMapper(mat_blue_reflect)));
@@ -65,7 +69,11 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
 
     let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)));
 
-    let floor = InifinitePlane::new(Vec3(0.0,0.0,0.0), Vec3::normalized(0.0, 1.0, 0.0), Box::new(StaticUvMapper(mat_white_reflect)));
+    let floor = InifinitePlane::with_random_right(
+        Vec3(0.0,0.0,0.0), 
+        Vec3::normalized(0.0, 1.0, 0.0), 
+        Box::new(CheckerboardUvMapper(mat_black, mat_white_reflect)), 
+        7.5);
 
     vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper), Box::new(floor)]
 }

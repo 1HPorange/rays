@@ -2,6 +2,10 @@ extern crate num_traits;
 
 use std::ops::*;
 
+// TODO: Rename this module to "vec" because this thing is in it
+#[derive(Debug, Copy, Clone)]
+pub struct Vec2<T>(pub T, pub T);
+
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3<T>(pub T, pub T, pub T);
 
@@ -97,6 +101,9 @@ impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
 
 // This trait is there to grant/force read-only access to the fields of a vector
 pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
+
+    // TODO: Think about when and why to take moved self here
+
     fn x(&self) -> T;
     fn y(&self) -> T;
     fn z(&self) -> T;
@@ -135,22 +142,26 @@ pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
         *self - normal * (self.dot(normal)) * T::from(2.0).unwrap()
     }
 
+    fn get_random_90_deg_vector(self) -> Vec3<T> {
+
+        assert!(!self.is_zero());
+
+        if !self.z().is_zero() {
+            Vec3(T::one(), T::one(), -(self.x() + self.y())/self.z() )
+        } else if !self.y().is_zero() {
+            Vec3(T::one(), T::one(), -(self.x() + self.z())/self.y() )
+        } else {
+            Vec3(T::one(), T::one(), -(self.y() + self.z())/self.x() )
+        }
+    }
+
     // Rotates the vector so that the old y axis is rotated into ny
     // the x and z axis are chosen arbitrarily, but deterministically
     fn reorient_y_axis<V>(self, ny: V) -> Vec3<T> where V: Vec3View<T> {
 
-        assert!(!ny.is_zero());
-
         // Calculate other base vectors
 
-        let nx = if !ny.z().is_zero() {
-            Vec3(T::one(), T::one(), -(ny.x() + ny.y())/ny.z() ).normalize()
-        } else if !ny.y().is_zero() {
-            Vec3(T::one(), T::one(), -(ny.x() + ny.z())/ny.y() ).normalize()
-        } else {
-            Vec3(T::one(), T::one(), -(ny.y() + ny.z())/ny.x() ).normalize()
-        };
-
+        let nx = self.get_random_90_deg_vector().normalize();
         let nz = nx.cross(ny);
 
         Vec3(
@@ -178,6 +189,8 @@ impl<T> Vec3View<T> for Vec3<T> where T: num_traits::Float {
 
 impl<T> Vec3View<T> for Vec3Norm<T> where T: num_traits::Float {
 
+    // TODO: Remove this vector nesting so we can use macros to switch out Vec3 and Vec3Norm constructors for specialized return values
+
     fn x(&self) -> T {
         self.0.x()
     }
@@ -191,6 +204,21 @@ impl<T> Vec3View<T> for Vec3Norm<T> where T: num_traits::Float {
     }
 }
 
+impl<T> Vec3View<T> for Vec2<T> where T: num_traits::Float {
+
+    fn x(&self) -> T {
+        self.0
+    }
+
+    fn y(&self) -> T {
+        self.1
+    }
+
+    fn z(&self) -> T {
+        T::zero()
+    }
+}
+
 impl<T> From<Vec3Norm<T>> for Vec3<T> where Vec3Norm<T>: Vec3View<T>, T: num_traits::Float {
 
     fn from(v: Vec3Norm<T>) -> Vec3<T> {
@@ -199,6 +227,15 @@ impl<T> From<Vec3Norm<T>> for Vec3<T> where Vec3Norm<T>: Vec3View<T>, T: num_tra
             v.0.y(),
             v.0.z()
         )
+    }
+
+}
+
+// It would be nice to implement this for a V: Vec3View<T>, but: https://github.com/rust-lang/rust/issues/50238
+impl<T> From<Vec3<T>> for Vec2<T> where {
+
+    fn from(v3: Vec3<T>) -> Vec2<T> {
+        Vec2(v3.0, v3.1)
     }
 
 }

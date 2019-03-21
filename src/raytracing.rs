@@ -28,7 +28,8 @@ pub trait RayTarget<T> {
 pub struct GeometryHitInfo<T> {
 
     pub position: Vec3<T>,
-    pub normal: Vec3Norm<T>
+    pub normal: Vec3Norm<T>,
+    pub uv: Vec2<T>
 
 }
 
