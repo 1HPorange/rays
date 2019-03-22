@@ -9,11 +9,13 @@ use super::material::*;
 use super::color::*;
 use super::raytracing::*;
 
+#[derive(Copy, Clone)]
 pub enum SamplingMethod {
     POINT,
     BILINEAR // TODO: Implement
 }
 
+#[derive(Clone)]
 pub struct TextureUvMapper<T> {
     base_mat: Material<T>,
     pixels: Vec<RGBColor>,
@@ -47,7 +49,7 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
 
         let w = rch.uv.0 * T::from(self.tex_width - 1).unwrap();
-        let h = rch.uv.1 * T::from(self.tex_height - 1).unwrap();
+        let h = (T::one() - rch.uv.1) * T::from(self.tex_height - 1).unwrap();
 
         let color = match self.sampling_method {
 

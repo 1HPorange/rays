@@ -44,7 +44,7 @@ impl<T> Sphere<T> where T: num_traits::Float {
 }
 
 impl<T> RayTarget<T> for Sphere<T> where 
-    T: num_traits::Float, Vec3<T>: Vec3View<T> {
+    T: num_traits::Float + num_traits::FloatConst, Vec3<T>: Vec3View<T> {
 
     fn test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>> {
         
@@ -79,21 +79,30 @@ impl<T> RayTarget<T> for Sphere<T> where
 
         let midpoint_to_surface = (rad_sqr - midpoint_to_center_sqr).sqrt();
 
-        // If we start inside the sphere, we always hit the "back wall"
+        // If we start inside the sphere, we always hit the "back wall" (else clause)
         let hitpoint = if ray_starts_inside {
             ray.origin + ray.direction * (orig_to_midpoint_len + midpoint_to_surface)
         } else {
             ray.origin + ray.direction * (orig_to_midpoint_len - midpoint_to_surface)
         };
+
         let normal = ((hitpoint - self.center) / self.radius).into_normalized();
 
-        // Calculate uvs with help of https://www.mathworks.com/matlabcentral/answers/16243-angle-between-two-vectors-in-3d
-        //let angle_to_up = 
+        let uv_x = normal
+            .project_onto_plane_from_same_origin(self.up)
+            .angle_to(self.right, self.up, false)
+            / T::from(360.0).unwrap();
+
+        let uv_y = T::one() - normal
+            .project_onto_plane_from_same_origin(self.right)
+            .angle_to(self.up, self.right, true)
+            .abs()
+            / T::from(180.0).unwrap();
 
         Option::Some(GeometryHitInfo {
             position: hitpoint,
             normal,
-            uv: Vec2(T::zero(), T::zero()) // TODO: Implement. Also add an upAxis field to the sphere so the uvs can rotate
+            uv: Vec2(uv_x, uv_y) // TODO: Implement. Also add an upAxis field to the sphere so the uvs can rotate
         })
     }
 }
@@ -132,7 +141,7 @@ impl<T> InifinitePlane<T> where T: num_traits::Float {
         // Normal and right Vector have to be at right angles
         assert!(normal.dot(right) < T::epsilon());
 
-        let up = normal.cross(right).normalize();
+        let up = (-normal.cross(right)).normalize();
 
         InifinitePlane {
             origin,
@@ -147,7 +156,7 @@ impl<T> InifinitePlane<T> where T: num_traits::Float {
     pub fn with_random_right(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
 
         let right = normal.get_random_90_deg_vector().normalize();
-        let up = normal.cross(right).normalize();
+        let up = (-normal.cross(right)).normalize();
 
         InifinitePlane {
             origin,

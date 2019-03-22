@@ -95,7 +95,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
 impl<T> Vec3Norm<T> where T: num_traits::Float {
 
     pub fn up() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::one(), T::zero()) }
-
+    pub fn right() -> Vec3Norm<T> { Vec3Norm(T::one(), T::zero(), T::zero()) }
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
@@ -180,10 +180,31 @@ pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
         )
     }
 
-    fn angle_to<V: Vec3View<T>>(self, v: V) -> T where T: num_traits::FloatConst {
+    // https://math.stackexchange.com/questions/878785/how-to-find-an-angle-in-range0-360-between-2-vectors
+    fn angle_to<V: Vec3View<T>>(self, v: V, n: Vec3Norm<T>, allow_negative_angles: bool) -> T where T: num_traits::FloatConst {
+        
+        let dot = self.dot(v);
+        let det = n.dot(self.cross(v));
 
-        self.cross(v).length().atan2(self.dot(v)).to_degrees()
+        let angle = det.atan2(dot).to_degrees();
 
+        if allow_negative_angles {
+            angle
+        } else {
+            if angle >= T::zero() {
+                angle
+            } else {
+                angle + T::from(360.0).unwrap()
+            }
+        }
+        
+    }
+
+    fn project_onto_plane_from_same_origin(self, plane_normal: Vec3Norm<T>) -> Vec3<T> where Self: Sub<Vec3<T>, Output=Vec3<T>> {
+
+        let non_projected_part = self.dot(plane_normal);
+
+        self - plane_normal * non_projected_part
     }
 }
 

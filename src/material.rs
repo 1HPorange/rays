@@ -50,7 +50,7 @@ impl<T> Material<T> {
             color,
             opacity: Opacity { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
             reflection,
-            refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
+            refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
         }
     }
 
@@ -59,7 +59,7 @@ impl<T> Material<T> {
             color,
             opacity: Opacity { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
             reflection: ReflectionParams::new(T::zero(), T::zero(), T::one(), T::zero()),
-            refraction: RefractionParams { index_of_refraction: T::zero(), max_angle: T::zero() }
+            refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
         }
     }
 }
@@ -88,7 +88,7 @@ impl<T> RefractionParams<T> {
 
 }
 
-// UV (to material) mappers
+// UV (to material) mapper traits
 
 pub trait UvMapper<T>: Send + Sync {
     
@@ -101,6 +101,8 @@ pub trait HasUvMapper<T> {
     fn get_uv_mapper(&self) -> &Box<UvMapper<T>>;
 
 }
+
+// UV (to material) mapper implementations
 
 pub struct StaticUvMapper<T>(pub Material<T>);
 
@@ -127,6 +129,20 @@ impl<T> UvMapper<T> for CheckerboardUvMapper<T> where Self: Send + Sync, T: num_
         } else {
             self.1
         }
+    }
+
+}
+
+pub struct DebugUvMapper;
+
+impl<T> UvMapper<T> for DebugUvMapper where Self: Send + Sync, T: num_traits::Float {
+
+    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
+        
+        let r: f32 = num_traits::NumCast::from(rch.uv.0).unwrap();
+        let g: f32 = num_traits::NumCast::from(rch.uv.1).unwrap();
+
+        Material::pure(RGBColor::new(r, g, 0.0))
     }
 
 }
