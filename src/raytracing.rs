@@ -197,7 +197,6 @@ fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, f
     direction.into_normalized()
 }
 
-// TODO: Move global intensity inside raytracing function, so it never appears in a composity expression (No: raytrace_recursive() * XXX)
 fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: T) -> RGBColor where 
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
     T: num_traits::Float + num_traits::FloatConst,
@@ -228,11 +227,11 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
             intensity: intensity * intensity_scale
         };
 
-        hit_object(params, rng, &hit_info) * hit_info.intensity
+        hit_object(params, rng, &hit_info)
     } else {
         
         // Ray didn't hit anything
-        params.scene.sky_color
+        params.scene.sky_color * intensity
 
     }
 }
@@ -284,42 +283,38 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     // Calculate the effect of the angle of incidence on reflectivity
     let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
     let scaled_reflection_intensity = 
-        (T::one() - incidence_reflection_influence)  * hit_info.mat.reflection.intensity_center + 
-        incidence_reflection_influence          * hit_info.mat.reflection.intensity_edges;
+        (T::one() - incidence_reflection_influence)     * hit_info.mat.reflection.intensity_center + 
+        incidence_reflection_influence                  * hit_info.mat.reflection.intensity_edges;
 
     // Calculate the effect of the angle of incidence on refraction (object alpha)
     let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.opacity.edge_effect_power);
     let scaled_alpha = 
-        (T::one() - incidence_alpha_influence)       * hit_info.mat.opacity.opacity_center +
-        incidence_alpha_influence               * hit_info.mat.opacity.opacity_edges;
+        (T::one() - incidence_alpha_influence)          * hit_info.mat.opacity.opacity_center +
+        incidence_alpha_influence                       * hit_info.mat.opacity.opacity_edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;
 
-    // Calculate intensities of color, reflection and refraction
-    let mat_color_intensity = scaled_alpha * (T::one() - scaled_reflection_intensity);
-    let total_reflection_intensity = scaled_alpha * scaled_reflection_intensity;
-    let total_refraction_intensity = T::one() - scaled_alpha;
+    // Calculate intensities of color, reflection and refraction and multiply to total ray intensity
+    let mat_color_intensity = scaled_alpha * (T::one() - scaled_reflection_intensity)   * hit_info.intensity;
+    let total_reflection_intensity = scaled_alpha * scaled_reflection_intensity         * hit_info.intensity;
+    let total_refraction_intensity = (T::one() - scaled_alpha)                          * hit_info.intensity;
 
     // Influence of material color (all rays that are neither reflected nor refracted)
     let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
 
-    // Abort recursion if we hit the bounce or intensity limit
-    if hit_info.bounces == params.render_params.max_bounces || hit_info.intensity < params.render_params.min_intensity {
+    // Abort recursion if we hit the bounce limit
+    if hit_info.bounces == params.render_params.max_bounces {
         return output
     }
 
     // Add reflective influence to output if the influence threshold is met
-    // Note: This is the only place where we multiply with the global intensity (hit_info.intensity)
-    //       We do this only for the comparison, not the final color calculation.
-    if total_reflection_intensity * hit_info.intensity > params.render_params.min_intensity {     
+    if total_reflection_intensity > params.render_params.min_intensity {     
         reflect(params, rng, hit_info, total_reflection_intensity, &mut output)
     }
 
     // Add refractive influence to output if the influence threshold is met
-    // Note: This is the only place where we multiply with the global intensity (hit_info.intensity)
-    //       We do this only for the comparison, not the final color calculation.
-    if total_refraction_intensity * hit_info.intensity > params.render_params.min_intensity {
+    if total_refraction_intensity > params.render_params.min_intensity {
         refract(params, rng, hit_info, total_refraction_intensity, &mut output)
     }
 
@@ -339,7 +334,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let ray = Ray { origin, direction };
 
-        *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+        *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity);
 
     } else {
 
@@ -356,32 +351,10 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
         }
 
     }
-}
-
-fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, reorient_axis: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
-    T: num_traits::Float,
-    R: Rng + ?Sized {
-
-    (0..max_rays)
-        .map(|_| {
-
-            let mut v = Vec3(T::zero(), T::one(), T::zero());
-
-            let rx: T = T::from(rng.gen::<f64>()).unwrap() * max_angle;
-            let ry: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
-            v.rotate_x(rx);
-            v.rotate_y(ry);
-
-            v.reorient_y_axis(reorient_axis)
-        })
-        .filter(move |v| v.dot(cutoff_normal) > T::zero()) // Filter out the ones that penetrate the geometry
-        //.map(|v| v.into_normalized()) // TODO: Look why this sometimes fails, or use this:
-        .map(|v| v.normalize())
-        .collect::<Vec<_>>()
 }
 
 fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<T>, total_intensity: T, output: &mut RGBColor) where 
@@ -425,7 +398,7 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
          // Special case for perfect refraction: We only need to send out a single ray
 
-        *output += raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity) * total_intensity;
+        *output += raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity);
 
     } else {
 
@@ -448,10 +421,32 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
+            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
         }
 
     }
+}
+
+fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, reorient_axis: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
+    T: num_traits::Float,
+    R: Rng + ?Sized {
+
+    (0..max_rays)
+        .map(|_| {
+
+            let mut v = Vec3(T::zero(), T::one(), T::zero());
+
+            let rx: T = T::from(rng.gen::<f64>()).unwrap() * max_angle;
+            let ry: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
+            v.rotate_x(rx);
+            v.rotate_y(ry);
+
+            v.reorient_y_axis(reorient_axis)
+        })
+        .filter(move |v| v.dot(cutoff_normal) > T::zero()) // Filter out the ones that penetrate the geometry
+        //.map(|v| v.into_normalized()) // TODO: Look why this sometimes fails, or use this:
+        .map(|v| v.normalize())
+        .collect::<Vec<_>>()
 }
 
 // Comparison function that determines which raycast hit is closer to the supplied point

@@ -161,15 +161,15 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1920, 1080)
+    RenderTarget::new(1920/2, 1080/2)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
 
     // TODO: Move into new function
     RenderingParameters { 
-        min_intensity: T::from(0.01).unwrap(), 
-        max_bounces: 3, 
+        min_intensity: T::from(0.03).unwrap(), 
+        max_bounces: std::i32::MAX, 
         max_reflect_rays: 5,
         max_refract_rays: 1,
         max_dof_rays: 30,
