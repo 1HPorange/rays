@@ -338,9 +338,9 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     } else {
 
-        // TODO: Make so that ray count scales down with intensity
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_reflect_rays);
 
-        let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays, hit_info.hit.normal, direction);
+        let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, ray_count, hit_info.hit.normal, direction);
 
         let ray_intensity = total_intensity / T::from(ray_directions.len()).unwrap();
 
@@ -408,9 +408,9 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let cutoff_normal = if going_inside_object { (-hit_info.hit.normal).into_normalized() } else { hit_info.hit.normal };
 
-        // TODO: Make so that ray count scales down with intensity
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_refract_rays);
 
-        let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, params.render_params.max_refract_rays, cutoff_normal, refr_ray.direction);
+        let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, ray_count, cutoff_normal, refr_ray.direction);
 
         let ray_intensity = total_intensity / T::from(directions.len()).unwrap();
 
@@ -447,6 +447,14 @@ fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_nor
         //.map(|v| v.into_normalized()) // TODO: Look why this sometimes fails, or use this:
         .map(|v| v.normalize())
         .collect::<Vec<_>>()
+}
+
+fn get_ray_count_for_intensity<T>(intensity: T, max_rays: i32) -> i32 where T: num_traits::Float {
+
+    let max_rays = T::from(max_rays).unwrap();
+    let ray_count = (T::one() + intensity * (max_rays - T::one())).round();
+
+    num_traits::NumCast::from(ray_count).unwrap()
 }
 
 // Comparison function that determines which raycast hit is closer to the supplied point

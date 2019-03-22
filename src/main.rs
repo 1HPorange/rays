@@ -8,6 +8,7 @@ mod scene;
 mod material;
 mod texture_uv_mapper;
 
+use std::time::{Duration, Instant};
 use scene::*;
 use camera::*;
 use vec3::*;
@@ -28,7 +29,10 @@ fn main() {
 
     let render_params = create_render_parameters();
 
+    let before = Instant::now();
     render(&scene, &camera, &mut render_target, &render_params);
+    let elapsed = before.elapsed();
+    println!("Finished in {}.{} s", elapsed.as_secs(), elapsed.subsec_millis());
 
     save_to_file(&render_target);
 }
