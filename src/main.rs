@@ -46,7 +46,7 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
 
     let mat_white_reflect = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
+        ReflectionParams::new(0.6, 0.6, 1.0, 10.0));
 
     let mat_black = Material::opaque_reflective(
         RGBColor::BLACK, 
@@ -65,18 +65,24 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
     let mat_refract_blurry = Material::new(
         RGBColor::WHITE, 
         Opacity::new(0.1, 0.75, 3.0), 
-        ReflectionParams::new(1.0, 1.0, 1.0, 0.0), 
+        ReflectionParams::new(0.5, 0.5, 1.0, 0.0), 
         RefractionParams::new(1.0, 10.0));
 
     let mat_coloured_diffuse = Material::opaque_reflective(
-        RGBColor::new(0.0, 0.0, 0.3), 
-        ReflectionParams::new(0.6, 1.0, 2.0, 90.0));
+        RGBColor::new(0.2, 0.0, 0.2), 
+        ReflectionParams::new(0.4, 1.0, 2.0, 90.0));
 
     let mat_marble = Material::opaque_reflective(
         RGBColor::PINK, // will be overwritten by uv mapper
-        ReflectionParams::new(0.15, 1.0, 2.0, 0.0));
+        ReflectionParams::new(0.05, 0.8, 3.0, 0.0));
 
     // UV Mappers
+
+    let skysphere_mapper = TextureUvMapper::from_png_24(
+        "D:/Downloads/skysphere4.png", 
+        Material::pure(RGBColor::BLACK), 
+        SamplingMethod::BILINEAR)
+        .expect("Could not load sky texture!");
 
     let marble_mapper = TextureUvMapper::from_png_24(
         "D:/Downloads/skysphere3.png", 
@@ -121,12 +127,6 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
 
     // Scenery
 
-    let skysphere_mapper = TextureUvMapper::from_png_24(
-        "D:/Downloads/skysphere4.png", 
-        Material::pure(RGBColor::BLACK), 
-        SamplingMethod::BILINEAR)
-        .expect("Could not load sky texture!");
-
     let sky_sphere = Sphere::new(
         Vec3::zero(), 
         1000.0, 
@@ -165,7 +165,7 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1920/2, 1080/2)
+    RenderTarget::new(1280, 720)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
@@ -174,7 +174,7 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
     RenderingParameters { 
         min_intensity: T::from(0.03).unwrap(), 
         max_bounces: std::i32::MAX, 
-        max_reflect_rays: 5,
+        max_reflect_rays: 10,
         max_refract_rays: 1,
         max_dof_rays: 30,
         ao_strength: T::from(0.8).unwrap(),
