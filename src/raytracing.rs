@@ -197,6 +197,7 @@ fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, f
     direction.into_normalized()
 }
 
+// TODO: Move global intensity inside raytracing function, so it never appears in a composity expression (No: raytrace_recursive() * XXX)
 fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: T) -> RGBColor where 
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
     T: num_traits::Float + num_traits::FloatConst,
@@ -309,12 +310,16 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     }
 
     // Add reflective influence to output if the influence threshold is met
-    if total_reflection_intensity > params.render_params.min_intensity {     
+    // Note: This is the only place where we multiply with the global intensity (hit_info.intensity)
+    //       We do this only for the comparison, not the final color calculation.
+    if total_reflection_intensity * hit_info.intensity > params.render_params.min_intensity {     
         reflect(params, rng, hit_info, total_reflection_intensity, &mut output)
     }
 
     // Add refractive influence to output if the influence threshold is met
-    if total_refraction_intensity > params.render_params.min_intensity {
+    // Note: This is the only place where we multiply with the global intensity (hit_info.intensity)
+    //       We do this only for the comparison, not the final color calculation.
+    if total_refraction_intensity * hit_info.intensity > params.render_params.min_intensity {
         refract(params, rng, hit_info, total_refraction_intensity, &mut output)
     }
 
@@ -337,6 +342,8 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * total_intensity;
 
     } else {
+
+        // TODO: Make so that ray count scales down with intensity
 
         let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, params.render_params.max_reflect_rays, hit_info.hit.normal, direction);
 
@@ -427,6 +434,8 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         let origin = refr_ray.origin;
 
         let cutoff_normal = if going_inside_object { (-hit_info.hit.normal).into_normalized() } else { hit_info.hit.normal };
+
+        // TODO: Make so that ray count scales down with intensity
 
         let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, params.render_params.max_refract_rays, cutoff_normal, refr_ray.direction);
 

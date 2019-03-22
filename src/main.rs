@@ -40,46 +40,93 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
 
     // Materials
 
-    let mat_refract = Material::new(
-        RGBColor::new(1.0, 0.9, 1.0),
-        Opacity::new(0.05, 0.6, 2.0),
-        ReflectionParams::new(0.0, 1.0, 5.0, 5.0),
-        RefractionParams::new(1.33, 2.5));
-
-    let mat_blue_reflect = Material::opaque_reflective(
-        RGBColor::new(0.0, 0.1, 0.2), 
-        ReflectionParams::new(0.025, 1.0, 4.0, 0.0));
-
-    let mat_red_diffuse = Material::opaque_reflective(
-        RGBColor::new(1.0, 0.0, 0.0), 
-        ReflectionParams::new(0.35, 0.6, 2.0, 90.0));
-
     let mat_white_reflect = Material::opaque_reflective(
         RGBColor::WHITE, 
         ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
 
-    let mat_black = Material::pure(RGBColor::BLACK);
+    let mat_black = Material::opaque_reflective(
+        RGBColor::BLACK, 
+        ReflectionParams::new(0.7, 0.7, 1.0, 90.0));
 
     let mat_very_reflective = Material::opaque_reflective(
         RGBColor::WHITE,
         ReflectionParams::new(0.75, 1.0, 4.0, 0.0));
 
     let mat_glass = Material::new(
-        RGBColor::new(1.0, 1.0, 1.0),
-        Opacity::new(0.1, 1.0, 2.0),
-        ReflectionParams::new(1.0, 1.0, 1.0, 0.0),
+        RGBColor::WHITE, 
+        Opacity::new(0.05, 1.0, 2.0), 
+        ReflectionParams::new(1.0, 1.0, 1.0, 0.0), 
         RefractionParams::new(1.33, 0.0));
+
+    let mat_refract_blurry = Material::new(
+        RGBColor::WHITE, 
+        Opacity::new(0.1, 0.75, 3.0), 
+        ReflectionParams::new(1.0, 1.0, 1.0, 0.0), 
+        RefractionParams::new(1.0, 10.0));
+
+    let mat_coloured_diffuse = Material::opaque_reflective(
+        RGBColor::new(0.0, 0.0, 0.3), 
+        ReflectionParams::new(0.6, 1.0, 2.0, 90.0));
+
+    let mat_marble = Material::opaque_reflective(
+        RGBColor::PINK, // will be overwritten by uv mapper
+        ReflectionParams::new(0.15, 1.0, 2.0, 0.0));
 
     // UV Mappers
 
-    let alan_mapper = TextureUvMapper::from_png_24("D:/Downloads/alan.png", mat_black, SamplingMethod::BILINEAR)
-        .expect("Could not load Alan. Won't work without him!");
+    let marble_mapper = TextureUvMapper::from_png_24(
+        "D:/Downloads/skysphere3.png", 
+        mat_marble,
+        SamplingMethod::BILINEAR)
+        .expect("Could not load marble texture!");
 
     // Objects
 
+    let back_left = Sphere::new(
+        Vec3(-8.0, 7.0, 20.0), 7.0, 
+        Box::new(StaticUvMapper(mat_glass)), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
     let back_right = Sphere::new(
-        Vec3(4.0, 7.0, 14.0), 7.0, 
+        Vec3(8.0, 7.0, 20.0), 7.0, 
         Box::new(StaticUvMapper(mat_very_reflective)), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
+    let front_left = Sphere::new(
+        Vec3(-12.0, 4.0, 7.5), 
+        4.0, 
+        Box::new(marble_mapper), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
+    let front_center = Sphere::new(
+        Vec3(0.0, 4.5, 5.0), 
+        4.5, 
+        Box::new(StaticUvMapper(mat_coloured_diffuse)), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
+    let front_right = Sphere::new(
+        Vec3(12.0, 4.0, 7.5), 
+        4.0, 
+        Box::new(StaticUvMapper(mat_refract_blurry)), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
+    // Scenery
+
+    let skysphere_mapper = TextureUvMapper::from_png_24(
+        "D:/Downloads/skysphere4.png", 
+        Material::pure(RGBColor::BLACK), 
+        SamplingMethod::BILINEAR)
+        .expect("Could not load sky texture!");
+
+    let sky_sphere = Sphere::new(
+        Vec3::zero(), 
+        1000.0, 
+        Box::new(skysphere_mapper), 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
@@ -90,23 +137,18 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
         Box::new(CheckerboardUvMapper(mat_black, mat_white_reflect)), 
         0.1);
 
-    // Sky Sphere
-
-    let sky_sphere = Sphere::new(
-        Vec3::zero(), 
-        1000.0, 
-        Box::new(alan_mapper), 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
-
     // Scene
 
     let mut scene = Scene::new(RGBColor::WHITE);
 
-    //scene.add_object(sky_sphere);
-
-    scene.add_object(back_right);
     scene.add_object(floor);
+    scene.add_object(sky_sphere);
+
+    scene.add_object(back_left);
+    scene.add_object(back_right);
+    scene.add_object(front_left);
+    scene.add_object(front_center);
+    scene.add_object(front_right);
 
     scene
 }
@@ -119,18 +161,18 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280/2, 720/2)
+    RenderTarget::new(1920, 1080)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
 
     // TODO: Move into new function
     RenderingParameters { 
-        min_intensity: T::zero(), 
-        max_bounces: 2, 
-        max_reflect_rays: 2,
-        max_refract_rays: 2,
-        max_dof_rays: 20,
+        min_intensity: T::from(0.01).unwrap(), 
+        max_bounces: 3, 
+        max_reflect_rays: 5,
+        max_refract_rays: 1,
+        max_dof_rays: 30,
         ao_strength: T::from(0.8).unwrap(),
         ao_distance: T::from(2.0).unwrap(),
         ao_rays: 3,
