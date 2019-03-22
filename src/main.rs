@@ -20,10 +20,7 @@ use texture_uv_mapper::*;
 
 fn main() {
 
-    let scene = Scene {
-        objects: create_geometry(),
-        // Sky
-    };
+    let scene = create_scene();
 
     let camera = create_camera();
 
@@ -39,7 +36,9 @@ fn main() {
 // Customize scene and camera setup inside the functions below
 //////////////////////////////////////////////////////////////
 
-fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
+fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single precision
+
+    // Materials
 
     let mat_refract = Material::new(
         RGBColor::new(1.0, 0.9, 1.0),
@@ -59,9 +58,7 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         RGBColor::WHITE, 
         ReflectionParams::new(0.75, 0.75, 1.0, 10.0));
 
-    let mat_black = Material::opaque_reflective(
-        RGBColor::BLACK, 
-        ReflectionParams::new(0.25, 0.25, 1.0, 10.0));
+    let mat_black = Material::pure(RGBColor::BLACK);
 
     let mat_very_reflective = Material::opaque_reflective(
         RGBColor::WHITE,
@@ -73,25 +70,45 @@ fn create_geometry() -> Vec<Box<SceneObject<f64>>> {
         ReflectionParams::new(1.0, 1.0, 1.0, 0.0),
         RefractionParams::new(1.33, 0.0));
 
+    // UV Mappers
+
     let alan_mapper = TextureUvMapper::from_png_24("D:/Downloads/alan.png", mat_black, SamplingMethod::BILINEAR)
         .expect("Could not load Alan. Won't work without him!");
 
-    let front = Sphere::with_random_right(Vec3(-0.5, 3.0, 5.0), 3.0, Box::new(StaticUvMapper(mat_refract)), Vec3Norm::up());
+    // Objects
 
-    let back_right = Sphere::new(Vec3(4.0, 7.0, 14.0), 7.0, Box::new(alan_mapper.clone()), Vec3Norm::up(), Vec3Norm::right());
-
-    let back_left_lower = Sphere::with_random_right(Vec3(-6.0, 4.0, 10.0), 4.0, Box::new(StaticUvMapper(mat_red_diffuse)), Vec3Norm::up());
-
-    let back_left_upper = Sphere::new(Vec3(-9.5, 8.0, 10.0), 6.0, Box::new(DebugUvMapper), Vec3Norm::right(), Vec3::normalized(0.0, 0.0, -1.0));
+    let back_right = Sphere::new(
+        Vec3(4.0, 7.0, 14.0), 7.0, 
+        Box::new(StaticUvMapper(mat_very_reflective)), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
 
     let floor = InifinitePlane::new(
         Vec3(0.0,0.0,0.0), 
         Vec3Norm::up(), 
         Vec3Norm::right(),
-        Box::new(alan_mapper), 
+        Box::new(CheckerboardUvMapper(mat_black, mat_white_reflect)), 
         0.1);
 
-    vec![Box::new(front), Box::new(back_right), Box::new(back_left_lower), Box::new(back_left_upper), Box::new(floor)]
+    // Sky Sphere
+
+    let sky_sphere = Sphere::new(
+        Vec3::zero(), 
+        1000.0, 
+        Box::new(alan_mapper), 
+        Vec3Norm::up(), 
+        Vec3Norm::right());
+
+    // Scene
+
+    let mut scene = Scene::new(RGBColor::WHITE);
+
+    //scene.add_object(sky_sphere);
+
+    scene.add_object(back_right);
+    scene.add_object(floor);
+
+    scene
 }
 
 fn create_camera<T>() -> Camera<T> where T: num_traits::Float {

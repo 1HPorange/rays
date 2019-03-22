@@ -229,7 +229,10 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
 
         hit_object(params, rng, &hit_info) * hit_info.intensity
     } else {
-        hit_skybox(&ray)
+        
+        // Ray didn't hit anything
+        params.scene.sky_color
+
     }
 }
 
@@ -439,22 +442,6 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
             *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity) * ray_intensity;
         }
 
-    }
-}
-
-fn hit_skybox<T>(ray: &Ray<T>) -> RGBColor where T: num_traits::Float {
-    
-    // Dumbass implementation that makes the floor a checkerboard and the sky a gradient
-
-    if ray.direction.y() >= T::zero() {
-
-        let mut t= ray.direction.y();
-        t = t + t;
-        t = t.min(T::one());
-
-        RGBColor::EVENING_BLUE * (T::one() - t) + RGBColor::WHITE * t
-    } else {
-        RGBColor::PINK
     }
 }
 
