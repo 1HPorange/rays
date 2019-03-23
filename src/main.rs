@@ -165,7 +165,7 @@ fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
 }
 
 fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280, 720)
+    RenderTarget::new(1280/2, 720/2)
 }
 
 fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
@@ -186,7 +186,7 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
 
 fn save_to_file(render_target: &RenderTarget) {
 
-    render_target.save_as_ppm("D:/Downloads/weirdo.ppm")
+    render_target.save_as_png("D:/Downloads/weirdo.png")
         .expect("Could not write to output file");
 
 }

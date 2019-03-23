@@ -1,8 +1,11 @@
 // TODO: Support other formats and alpha
 
 use super::color::*;
+use super::texture_uv_mapper::*;
+use std::path::{Path};
 
 use std::fs;
+use std::io;
 
 pub struct RenderTarget {
     pub width: i32,
@@ -32,7 +35,7 @@ impl RenderTarget {
         self.data[(x + y * self.width) as usize] = color;
     }
 
-    pub fn save_as_ppm(&self, path: &str) -> std::io::Result<()> {
+    pub fn save_as_ppm<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
 
         let mut bytes = vec![
             80u8, 54, // Magic number
@@ -52,6 +55,23 @@ impl RenderTarget {
         }));
 
         fs::write(path, bytes)?;
+
+        Ok(())
+    }
+
+    pub fn save_as_png<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+
+        // Convert our float colour to a byte color format
+        fn c(x: f32) -> u8 {
+            (x * 255.0) as u8
+        }
+
+        let data = self.data.iter()
+            .map(|pix| lodepng::RGB::new(c(pix.r), c(pix.g), c(pix.b)))
+            .collect::<Vec<_>>();
+
+        lodepng::encode24_file(path, &data, self.width as usize, self.height as usize)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.as_str()))?;
 
         Ok(())
     }
