@@ -59,7 +59,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     // TODO: Make these function not mutate self. Then they can move into vecview
 
-    pub fn rotate_x(&mut self, mut deg: T) {
+    pub fn rotate_x(&mut self, deg: T) {
 
         let rad = deg.to_radians();
 
@@ -69,7 +69,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.2 = old.1 * rad.sin() + old.2 * rad.cos();
     }
 
-    pub fn rotate_y(&mut self, mut deg: T) {
+    pub fn rotate_y(&mut self, deg: T) {
 
         let rad = deg.to_radians();
 
@@ -79,7 +79,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.2 = -old.0 * rad.sin() + old.2 * rad.cos();
     }
 
-    pub fn rotate_z(&mut self, mut deg: T) {
+    pub fn rotate_z(&mut self, deg: T) {
 
         let rad = deg.to_radians();
 

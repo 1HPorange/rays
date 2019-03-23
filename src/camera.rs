@@ -1,7 +1,5 @@
 use super::vec3::*;
 
-use num_traits::NumCast;
-
 #[derive(Debug, Copy, Clone)]
 pub struct Camera<T> {
 

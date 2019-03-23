@@ -22,7 +22,7 @@ pub fn create_scene() -> Scene<f64>  {
     //let sphere = // TODO: Interpolate reflection vector towards normal with growing angle!
 
     let sphere = Sphere::with_random_right(
-        Vec3(0.0, 7.5, 10.0),
+        Vec3(0.0, 7.5, 11.0),
         4.5,
         StaticUvMapper(mat_white_diffuse),
         Vec3Norm::up());
@@ -86,15 +86,15 @@ pub fn create_camera() -> Camera<f64> {
         Vec3(0.0, 7.5, -10.0),
         Vec3::zero(),
         ViewPort { width: 16.0, height: 9.0 },
-        60.0)
+        40.0)
 }
 
 pub fn create_render_parameters() -> RenderParameters<f64> {
 
     let mut rp = RenderParameters::default();
     
-    rp.ao.strength = 0.5;
-    rp.ao.distance = 6.0;
+    rp.ao.strength = 0.4;
+    rp.ao.distance = 5.0;
 
     rp
 }
