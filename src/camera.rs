@@ -8,8 +8,7 @@ pub struct Camera<T> {
     pub position: Vec3<T>,
     pub orientation: Vec3<T>,
     pub viewport: ViewPort<T>,
-    pub fov_horizontal: T,
-    pub dof_angle: T
+    pub fov_horizontal: T
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -29,14 +28,13 @@ impl<T> ViewPort<T> where T: num_traits::Float {
 impl<T> Camera<T> where T: num_traits::Float {
 
     // Orientation in degrees around the x,y, and z axis
-    pub fn new(position: Vec3<T>, orientation: Vec3<T>, viewport: ViewPort<T>, fov_horizontal: T, dof_angle: T) -> Camera<T> {
+    pub fn new(position: Vec3<T>, orientation: Vec3<T>, viewport: ViewPort<T>, fov_horizontal: T) -> Camera<T> {
 
         Camera {
             position,
             orientation,
             viewport,
-            fov_horizontal,
-            dof_angle
+            fov_horizontal
         }
 
     }

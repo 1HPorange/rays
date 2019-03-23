@@ -1,6 +1,6 @@
 use crate::material::*;
 use crate::color::*;
-use crate::raytracing::*;
+use crate::ray_target::*;
 
 mod texture_uv_mapper;
 

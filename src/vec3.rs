@@ -93,7 +93,13 @@ impl<T> Vec3<T> where T: num_traits::Float {
 impl<T> Vec3Norm<T> where T: num_traits::Float {
 
     pub fn up() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::one(), T::zero()) }
+    pub fn down() -> Vec3Norm<T> { Vec3Norm(T::zero(), -T::one(), T::zero()) }
+
     pub fn right() -> Vec3Norm<T> { Vec3Norm(T::one(), T::zero(), T::zero()) }
+    pub fn left() -> Vec3Norm<T> { Vec3Norm(-T::one(), T::zero(), T::zero()) }
+
+    pub fn forward() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::zero(), T::one()) }
+    pub fn back() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::zero(), -T::one()) }
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {

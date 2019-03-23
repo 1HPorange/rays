@@ -8,6 +8,8 @@ use super::output::*;
 use super::scene::*;
 use super::color::*;
 use super::material::*;
+use super::ray_target::*;
+use super::render_parameters::*;
 
 use std::cmp;
 
@@ -16,42 +18,10 @@ pub struct Ray<T> {
     pub direction: Vec3Norm<T>
 }
 
-pub trait RayTarget<T> {
-
-    fn test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>>;
-
-}
-
-pub struct GeometryHitInfo<T> {
-
-    pub position: Vec3<T>,
-    pub normal: Vec3Norm<T>,
-    pub uv: Vec2<T>
-
-}
-
-pub struct RenderingParameters<T> {
-    pub min_intensity: T,
-    pub max_bounces: i32,
-    pub max_reflect_rays: i32,
-    pub max_refract_rays: i32,
-    pub max_dof_rays: i32,
-
-    // TODO: Move to AO struct
-    pub ao_strength: T,
-    pub ao_distance: T,
-    pub ao_rays: i32,
-
-    /// Floating point errors can cause visual artifacts in reflections and refraction.
-    /// This bias introduces slight inaccuracies with these phenomena, but removes the
-    /// artifacts. Basically: Keep lowering this until you see artifacts
-    pub float_correction_bias: T
-}
-
 // Convenience structs so we don't need to pass around so much stuff
 struct RaytraceParameters<'a, T> {
     scene: &'a Scene<T>,
-    render_params: &'a RenderingParameters<T>,
+    render_params: &'a RenderParameters<T>,
 }
 
 struct HitInfo<'a, T> {
@@ -62,7 +32,7 @@ struct HitInfo<'a, T> {
     intensity: T
 }
 
-pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderingParameters<T>) where 
+pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderParameters<T>) where 
     T: num_traits::Float + num_traits::FloatConst + Send + Sync {
 
     let raytrace_params = RaytraceParameters {
@@ -113,9 +83,9 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
             let origin = get_initial_ray_origin(camera, vp_x, vp_y);
 
             // We render just a single ray if DoF is disabled
-            let color = if camera.dof_angle.is_zero() {
+            let color = if render_params.dof.max_samples <= 1 {
 
-                let direction = get_initial_randomized_ray_direction(camera, &mut rng, angle_x, angle_y);
+                let direction = get_initial_randomized_ray_direction(camera, &mut rng, &render_params.dof, angle_x, angle_y);
 
                 raytrace_recursive(
                     &raytrace_params,
@@ -127,11 +97,11 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
                 let mut color = RGBColor::BLACK;
 
-                let ray_influence = T::one() / T::from(render_params.max_dof_rays).unwrap();
+                let ray_influence = T::one() / T::from(render_params.dof.max_samples).unwrap();
 
-                for _ in 0..render_params.max_dof_rays {
+                for _ in 0..render_params.dof.max_samples {
 
-                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, angle_x, angle_y);
+                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, &render_params.dof, angle_x, angle_y);
 
                     color += raytrace_recursive(
                         &raytrace_params,
@@ -166,16 +136,16 @@ fn get_initial_ray_origin<T>(camera: &Camera<T>, viewport_x: T, viewport_y: T) -
     origin
 }
 
-fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, fov_angle_x: T, fov_angle_y: T) -> Vec3Norm<T> where 
+fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, dof: &DoFParameters<T>, fov_angle_x: T, fov_angle_y: T) -> Vec3Norm<T> where 
     T: num_traits::Float,
     R: Rng + ?Sized {
 
     let mut direction = Vec3(T::zero(), T::zero(), T::one());
 
     // Randomization for DoF
-    if !camera.dof_angle.is_zero() {
+    if !dof.max_angle.is_zero() {
 
-        let dof_rx: T = T::from(rng.gen::<f64>()).unwrap() * camera.dof_angle;
+        let dof_rx: T = T::from(rng.gen::<f64>()).unwrap() * dof.max_angle;
         let dof_rz: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
         direction.rotate_x(dof_rx);
         direction.rotate_z(dof_rz);
@@ -211,7 +181,7 @@ fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray
         let mut intensity_scale = T::one();
 
         // Ambient Occlusion
-        if !params.render_params.ao_strength.is_zero() {
+        if !params.render_params.ao.strength.is_zero() {
 
             apply_ao(&mut intensity_scale, rng, params, &hit);
         }
@@ -238,8 +208,8 @@ fn apply_ao<T,R>(intensity: &mut T, rng: &mut R, params: &RaytraceParameters<T>,
     R: Rng + ?Sized {
 
     // Generate ray cone with full spread
-    let origin = hit.position + hit.normal * params.render_params.float_correction_bias;
-    let directions = gen_sample_ray_cone(rng, T::from(90.0).unwrap(), params.render_params.ao_rays, hit.normal, hit.normal);
+    let origin = hit.position + hit.normal * params.render_params.quality.float_correction_bias;
+    let directions = gen_sample_ray_cone(rng, T::from(90.0).unwrap(), params.render_params.ao.samples, hit.normal, hit.normal);
 
     let closest = directions.into_iter()
         .flat_map(|direction| get_closest_hit(params, &Ray { origin, direction }))
@@ -249,9 +219,9 @@ fn apply_ao<T,R>(intensity: &mut T, rng: &mut R, params: &RaytraceParameters<T>,
 
     if let Some((_, hit)) = closest {
         
-        let distance_normalized = ((hit.position - origin).length() / params.render_params.ao_distance).min(T::one());
+        let distance_normalized = ((hit.position - origin).length() / params.render_params.ao.distance).min(T::one());
 
-        let ao_strength = (T::one() - distance_normalized).powf(T::from(2.0).unwrap()) * params.render_params.ao_strength;
+        let ao_strength = (T::one() - distance_normalized).powf(T::from(2.0).unwrap()) * params.render_params.ao.strength;
 
         *intensity = *intensity * (T::one() - ao_strength);
     }
@@ -301,17 +271,17 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     let mut output = RGBColor::from(hit_info.mat.color) * mat_color_intensity;
 
     // Abort recursion if we hit the bounce limit
-    if hit_info.bounces == params.render_params.max_bounces {
+    if hit_info.bounces == params.render_params.quality.max_bounces {
         return output
     }
 
     // Add reflective influence to output if the influence threshold is met
-    if total_reflection_intensity > params.render_params.min_intensity {     
+    if total_reflection_intensity > params.render_params.quality.min_intensity {     
         reflect(params, rng, hit_info, total_reflection_intensity, &mut output)
     }
 
     // Add refractive influence to output if the influence threshold is met
-    if total_refraction_intensity > params.render_params.min_intensity {
+    if total_refraction_intensity > params.render_params.quality.min_intensity {
         refract(params, rng, hit_info, total_refraction_intensity, &mut output)
     }
 
@@ -323,7 +293,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     R: Rng + ?Sized {
 
     // Origin of all reflected rays including bias
-    let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.float_correction_bias;
+    let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.quality.float_correction_bias;
     let direction = hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized();
 
     // Special case for perfect reflection; We only need to send out a single ray
@@ -335,7 +305,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     } else {
 
-        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_reflect_rays);
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.sample_limits.max_reflection_samples);
 
         let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, ray_count, hit_info.hit.normal, direction);
 
@@ -367,12 +337,12 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         let k = T::one() - refr_ratio*refr_ratio * (T::one() - hit_cos*hit_cos);
 
         if k < T::zero() {
-            let origin = hit_info.hit.position - hit_info.hit.normal * params.render_params.float_correction_bias;
+            let origin = hit_info.hit.position - hit_info.hit.normal * params.render_params.quality.float_correction_bias;
             let direction = hit_info.ray.direction.reflect((-hit_info.hit.normal).into_normalized()).into_normalized();
             Ray { origin, direction }
         } else {
             // Be careful here: When we leave the medium, we need the bias to take us outside of the object!
-            let origin = hit_info.hit.position - n * params.render_params.float_correction_bias;
+            let origin = hit_info.hit.position - n * params.render_params.quality.float_correction_bias;
             let direction = (hit_info.ray.direction * refr_ratio + hit_info.hit.normal * (refr_ratio * hit_cos - k.sqrt())).normalize();
             Ray { origin, direction }
         }
@@ -405,7 +375,7 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let cutoff_normal = if going_inside_object { (-hit_info.hit.normal).into_normalized() } else { hit_info.hit.normal };
 
-        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_refract_rays);
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.sample_limits.max_refraction_samples);
 
         let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, ray_count, cutoff_normal, refr_ray.direction);
 

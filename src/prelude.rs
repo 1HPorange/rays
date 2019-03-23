@@ -8,3 +8,4 @@ pub use crate::geometry::{sphere::*, ininite_plane::*};
 pub use crate::scene::Scene;
 pub use crate::camera::{Camera, ViewPort};
 pub use crate::output::RenderTarget;
+pub use crate::render_parameters::*;

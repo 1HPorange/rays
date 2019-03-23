@@ -12,8 +12,9 @@ mod post_processing;
 mod raytracing;
 mod scene;
 mod vec3;
+mod render_parameters;
+mod ray_target;
+
 pub mod uv_mappers;
-
 pub mod prelude;
-
-pub use raytracing::{render, RenderingParameters};
+pub use raytracing::render;

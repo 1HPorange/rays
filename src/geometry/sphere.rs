@@ -1,6 +1,7 @@
 use crate::vec3::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
+use crate::ray_target::*;
 
 pub struct Sphere<T> {
 

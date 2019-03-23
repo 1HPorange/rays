@@ -1,4 +1,4 @@
-use super::raytracing::*;
+use super::ray_target::*;
 use super::uv_mappers::*;
 use super::color::*;
 
