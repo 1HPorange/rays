@@ -83,9 +83,9 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
             let origin = get_initial_ray_origin(camera, vp_x, vp_y);
 
             // We render just a single ray if DoF is disabled
-            let color = if render_params.dof.max_samples <= 1 {
+            let color = if render_params.dof.max_angle.is_zero() {
 
-                let direction = get_initial_randomized_ray_direction(camera, &mut rng, &render_params.dof, angle_x, angle_y);
+                let direction = get_initial_randomized_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
 
                 raytrace_recursive(
                     &raytrace_params,
@@ -101,7 +101,7 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
                 for _ in 0..render_params.dof.max_samples {
 
-                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, &render_params.dof, angle_x, angle_y);
+                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
 
                     color += raytrace_recursive(
                         &raytrace_params,
@@ -116,6 +116,7 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
             };
             
             {
+                // TODO: Wrap this in unsafe code. We will never write to the same pixel twice anyway
                 let mut lock = render_target.lock().unwrap();
 
                 lock.set_pixel(x_ind, y_ind, color);
@@ -136,16 +137,16 @@ fn get_initial_ray_origin<T>(camera: &Camera<T>, viewport_x: T, viewport_y: T) -
     origin
 }
 
-fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, dof: &DoFParameters<T>, fov_angle_x: T, fov_angle_y: T) -> Vec3Norm<T> where 
+fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, dof_angle: T, fov_angle_x: T, fov_angle_y: T) -> Vec3Norm<T> where 
     T: num_traits::Float,
     R: Rng + ?Sized {
 
     let mut direction = Vec3(T::zero(), T::zero(), T::one());
 
     // Randomization for DoF
-    if !dof.max_angle.is_zero() {
+    if !dof_angle.is_zero() {
 
-        let dof_rx: T = T::from(rng.gen::<f64>()).unwrap() * dof.max_angle;
+        let dof_rx: T = T::from(rng.gen::<f64>()).unwrap() * dof_angle;
         let dof_rz: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
         direction.rotate_x(dof_rx);
         direction.rotate_z(dof_rz);
@@ -243,10 +244,9 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     T: num_traits::Float + num_traits::FloatConst, 
     R: Rng + ?Sized {
     
-    // Calculate the angle of incidence and it's steepness
-    let rev_incoming_dot_normal = (-hit_info.ray.direction).dot(hit_info.hit.normal);
-    let incidence_angle_steepness = T::one() - (rev_incoming_dot_normal.acos() / T::FRAC_PI_2() - T::one()).abs();
-    
+    // Calculate the angle btween our incoming ray and surface normal
+    let incidence_angle_steepness = calc_steepness(hit_info.ray.direction, hit_info.hit.normal);
+
     // Calculate the effect of the angle of incidence on reflectivity
     let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
     let scaled_reflection_intensity = 
@@ -394,25 +394,45 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     }
 }
 
-fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, reorient_axis: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
+fn calc_steepness<T>(incoming: Vec3Norm<T>, normal: Vec3Norm<T>) -> T where T: num_traits::Float + num_traits::FloatConst {
+
+    let i_dot_n = incoming.dot(normal);
+
+    let angle_rad = if i_dot_n <= T::zero() {
+        // Normal reflection
+        T::PI() - i_dot_n.acos()
+    } else {
+        // Interior reflection (we are a refracted ray inside of an object)
+        i_dot_n.acos()
+    };
+
+    angle_rad / T::FRAC_PI_2()
+}
+
+fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, cone_direction: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
     T: num_traits::Float,
     R: Rng + ?Sized {
+
+    let cone_dir_right_angle = cone_direction.get_random_90_deg_vector().normalize();
 
     (0..max_rays)
         .map(|_| {
 
-            let mut v = Vec3(T::zero(), T::one(), T::zero());
+            let deviation = T::from(rng.gen::<f64>()).unwrap() * max_angle;
+            let spin = T::from(rng.gen::<f64>() * 360.0).unwrap();
 
-            let rx: T = T::from(rng.gen::<f64>()).unwrap() * max_angle;
-            let ry: T = T::from(rng.gen::<f64>() * 360.0).unwrap();
-            v.rotate_x(rx);
-            v.rotate_y(ry);
+            // Copy initial direction
+            let mut dir = cone_direction;
 
-            v.reorient_y_axis(reorient_axis)
+            // Deviate from initial direction by up to max_angle
+            dir.rotate_around_axis(cone_dir_right_angle, deviation);
+
+            // Randomize the direction
+            dir.rotate_around_axis(cone_direction, spin);
+
+            dir
         })
         .filter(move |v| v.dot(cutoff_normal) > T::zero()) // Filter out the ones that penetrate the geometry
-        //.map(|v| v.into_normalized()) // TODO: Look why this sometimes fails, or use this:
-        .map(|v| v.normalize())
         .collect::<Vec<_>>()
 }
 

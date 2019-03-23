@@ -6,15 +6,26 @@ pub fn create_scene() -> Scene<f64>  {
 
     let mat_white_diffuse = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(0.3, 0.3, 1.0, 90.0));
+        ReflectionParams::new(0.0, 0.2, 1.0, 90.0));
 
-    let mat_green_diffuse = Material::opaque_reflective(
-        RGBColor::new(0.0, 1.0, 0.0), 
-        ReflectionParams::new(0.3, 0.3, 1.0, 90.0));
+    let mat_gray = Material::pure(
+        RGBColor::new(0.5, 0.5, 0.5));
+
+    let mat_orange = Material::pure(
+        RGBColor::new(1.0, 0.6, 0.1));
+
+    let mat_blue = Material::pure(
+        RGBColor::new(0.25, 0.75, 1.0));
 
     // Objects
 
+    //let sphere = // TODO: Interpolate reflection vector towards normal with growing angle!
 
+    let sphere = Sphere::with_random_right(
+        Vec3(0.0, 7.5, 10.0),
+        6.0,
+        StaticUvMapper(mat_white_diffuse),
+        Vec3Norm::up());
 
     // Scenery (walls)
 
@@ -25,19 +36,46 @@ pub fn create_scene() -> Scene<f64>  {
         StaticUvMapper(mat_white_diffuse), 
         1.0);
 
+    let ceiling = InifinitePlane::new(
+        Vec3(0.0, 15.0, 0.0), 
+        Vec3Norm::down(), 
+        Vec3Norm::right(),
+        StaticUvMapper(mat_white_diffuse), 
+        1.0);
+
     let back_wall = InifinitePlane::new(
         Vec3(0.0, 0.0, 20.0), 
         Vec3Norm::back(), 
         Vec3Norm::right(),
-        StaticUvMapper(mat_green_diffuse), 
+        StaticUvMapper(mat_gray), 
         1.0);
+
+    let left_wall = InifinitePlane::new(
+        Vec3(-15.0, 0.0, 0.0), 
+        Vec3Norm::right(), 
+        Vec3Norm::forward(),
+        StaticUvMapper(mat_orange), 
+        1.0);
+
+    let right_wall = InifinitePlane::new(
+        Vec3(15.0, 0.0, 0.0), 
+        Vec3Norm::left(), 
+        Vec3Norm::forward(),
+        StaticUvMapper(mat_blue), 
+        1.0);
+
 
     // Scene
 
     let mut scene = Scene::new(RGBColor::WHITE);
 
     scene.add_object(floor);
+    scene.add_object(ceiling);
     scene.add_object(back_wall);
+    scene.add_object(left_wall);
+    scene.add_object(right_wall);
+
+    scene.add_object(sphere);
 
     scene
 }
@@ -45,14 +83,21 @@ pub fn create_scene() -> Scene<f64>  {
 pub fn create_camera() -> Camera<f64> {
 
     Camera::new(
-        Vec3(0.0, 15.0, -10.0),
-        Vec3(25.0, 0.0, 0.0),
+        Vec3(0.0, 7.5, -10.0),
+        Vec3::zero(),
         ViewPort { width: 16.0, height: 9.0 },
         60.0)
 }
 
 pub fn create_render_parameters() -> RenderParameters<f64> {
 
-    RenderParameters::default()
+    let mut rp = RenderParameters::default();
+    
+    rp.ao.strength = 0.7;
+    rp.ao.distance = 7.5;
 
+    rp.quality.max_bounces = 0;
+    rp.ao.samples = 20;
+
+    rp
 }

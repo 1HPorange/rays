@@ -61,32 +61,32 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn rotate_x(&mut self, mut deg: T) {
 
-        deg = deg.to_radians();
+        let rad = deg.to_radians();
 
         let old = *self;
 
-        self.1 = old.1 * deg.cos() - old.2 * deg.sin();
-        self.2 = old.1 * deg.sin() + old.2 * deg.cos();
+        self.1 = old.1 * rad.cos() - old.2 * rad.sin();
+        self.2 = old.1 * rad.sin() + old.2 * rad.cos();
     }
 
     pub fn rotate_y(&mut self, mut deg: T) {
 
-        deg = deg.to_radians();
+        let rad = deg.to_radians();
 
         let old = *self;
 
-        self.0 = old.0 * deg.cos() + old.2 * deg.sin();
-        self.2 = -old.0 * deg.sin() + old.2 * deg.cos();
+        self.0 = old.0 * rad.cos() + old.2 * rad.sin();
+        self.2 = -old.0 * rad.sin() + old.2 * rad.cos();
     }
 
     pub fn rotate_z(&mut self, mut deg: T) {
 
-        deg = deg.to_radians();
+        let rad = deg.to_radians();
 
         let old = *self;
 
-        self.0 = old.0 * deg.cos() - old.1 * deg.sin();
-        self.1 = old.0 * deg.sin() + old.1 * deg.cos();
+        self.0 = old.0 * rad.cos() - old.1 * rad.sin();
+        self.1 = old.0 * rad.sin() + old.1 * rad.cos();
     }
 }
 
@@ -100,6 +100,29 @@ impl<T> Vec3Norm<T> where T: num_traits::Float {
 
     pub fn forward() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::zero(), T::one()) }
     pub fn back() -> Vec3Norm<T> { Vec3Norm(T::zero(), T::zero(), -T::one()) }
+
+    // https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+    pub fn rotate_around_axis(&mut self, u: Vec3Norm<T>, deg: T) {
+        
+        let rad = deg.to_radians();
+
+        let old = *self;
+
+        let cos = rad.cos();
+        let sin = rad.sin();
+
+        self.0 =    old.0 * (cos + u.0 * u.0 * (T::one() - cos)) + 
+                    old.1 * (u.0 * u.1 * (T::one() - cos) - u.2 * sin) +
+                    old.2 * (u.0 * u.2 * (T::one() - cos) + u.1 * sin);
+        
+        self.1 =    old.0 * (u.1 * u.0 * (T::one() - cos) + u.2 * sin) +
+                    old.1 * (cos + u.1 * u.1 * (T::one() - cos)) +
+                    old.2 * (u.1 * u.2 * (T::one() - cos) - u.0 * sin);
+
+        self.2 =    old.0 * (u.2 * u.0 * (T::one() - cos) - u.1 * sin) +
+                    old.1 * (u.2 * u.1 * (T::one() - cos) + u.0 * sin) +
+                    old.2 * (cos + u.2 * u.2 * (T::one() - cos));
+    }
 }
 
 impl<T,R> AddAssign<R> for Vec3<T> where R: Vec3View<T>, T: num_traits::Float {
@@ -159,33 +182,18 @@ pub trait Vec3View<T>: Sized + Copy where T: num_traits::Float {
 
         assert!(!self.is_zero());
 
-        if !self.z().is_zero() {
-            Vec3(T::one(), T::one(), -(self.x() + self.y())/self.z() )
+        if !self.x().is_zero() {
+            Vec3(- (self.y() + self.z()) / self.x(), T::one(), T::one())
         } else if !self.y().is_zero() {
-            Vec3(T::one(), T::one(), -(self.x() + self.z())/self.y() )
+            Vec3(T::one(), - (self.x() + self.z()) / self.y(), T::one())
         } else {
-            Vec3(T::one(), T::one(), -(self.y() + self.z())/self.x() )
+            Vec3(T::one(), T::one(), - (self.x() + self.y()) / self.z())
         }
     }
 
-    // Rotates the vector so that the old y axis is rotated into ny
-    // the x and z axis are chosen arbitrarily, but deterministically
-    fn reorient_y_axis<V>(self, ny: V) -> Vec3<T> where V: Vec3View<T> {
-
-        // Calculate other base vectors
-
-        let nx = self.get_random_90_deg_vector().normalize();
-        let nz = nx.cross(ny);
-
-        Vec3(
-            self.x() * nx.x() + self.y() * ny.x() + self.z() * nz.x(),
-            self.x() * nx.y() + self.y() * ny.y() + self.z() * nz.y(),
-            self.x() * nx.z() + self.y() * ny.z() + self.z() * nz.z()
-        )
-    }
-
     // https://math.stackexchange.com/questions/878785/how-to-find-an-angle-in-range0-360-between-2-vectors
-    fn angle_to<V: Vec3View<T>>(self, v: V, n: Vec3Norm<T>, allow_negative_angles: bool) -> T where T: num_traits::FloatConst {
+    // The normal parameter is the normal of the plane that self and v lie on. This allows us to define 360 deg rotation sensibly
+    fn angle_to_planar<V: Vec3View<T>>(self, v: V, n: Vec3Norm<T>, allow_negative_angles: bool) -> T where T: num_traits::FloatConst {
         
         let dot = self.dot(v);
         let det = n.dot(self.cross(v));

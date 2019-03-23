@@ -1,6 +1,9 @@
 extern crate rays;
 
+#[allow(dead_code)]
 mod example1;
+
+#[allow(dead_code)]
 mod example2;
 
 use rays::prelude::*;

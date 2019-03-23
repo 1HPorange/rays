@@ -89,12 +89,12 @@ impl<T> RayTarget<T> for Sphere<T> where
 
         let uv_x = normal
             .project_onto_plane_from_same_origin(self.up)
-            .angle_to(self.right, self.up, false)
+            .angle_to_planar(self.right, self.up, false)
             / T::from(360.0).unwrap();
 
         let uv_y = T::one() - normal
             .project_onto_plane_from_same_origin(self.right)
-            .angle_to(self.up, self.right, true)
+            .angle_to_planar(self.up, self.right, true)
             .abs()
             / T::from(180.0).unwrap();
 
