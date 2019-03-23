@@ -15,7 +15,7 @@ fn main() {
 
     let camera = example1::create_camera();
 
-    let mut render_target = RenderTarget::new(1280/2, 720/2);
+    let mut render_target = RenderTarget::new(1280, 720);
 
     let render_params = example1::create_render_parameters();
 
