@@ -21,7 +21,7 @@ pub struct InifinitePlane<T> {
 
 impl<T> InifinitePlane<T> where T: num_traits::Float {
 
-    pub fn new(origin: Vec3<T>, normal: Vec3Norm<T>, right: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
+    pub fn new<U: 'static + UvMapper<T>>(origin: Vec3<T>, normal: Vec3Norm<T>, right: Vec3Norm<T>, uv_mapper: U, uv_scale: T) -> InifinitePlane<T> {
 
         // Normal and right Vector have to be at right angles
         assert!(normal.dot(right) < T::epsilon());
@@ -32,13 +32,13 @@ impl<T> InifinitePlane<T> where T: num_traits::Float {
             origin,
             normal,
             right,
-            uv_mapper,
+            uv_mapper: Box::new(uv_mapper),
             uv_scale,
             up
         }
     }
 
-    pub fn with_random_right(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: Box<UvMapper<T>>, uv_scale: T) -> InifinitePlane<T> {
+    pub fn with_random_right<U: 'static + UvMapper<T>>(origin: Vec3<T>, normal: Vec3Norm<T>, uv_mapper: U, uv_scale: T) -> InifinitePlane<T> {
 
         let right = normal.get_random_90_deg_vector().normalize();
         let up = (-normal.cross(right)).normalize();
@@ -47,7 +47,7 @@ impl<T> InifinitePlane<T> where T: num_traits::Float {
             origin,
             normal,
             right,
-            uv_mapper,
+            uv_mapper: Box::new(uv_mapper),
             uv_scale,
             up
         }

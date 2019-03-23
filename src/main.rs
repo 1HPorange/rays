@@ -78,34 +78,34 @@ fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use si
 
     let back_left = Sphere::new(
         Vec3(-8.0, 7.0, 20.0), 7.0, 
-        Box::new(StaticUvMapper(mat_glass)), 
+        StaticUvMapper(mat_glass), 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
     let back_right = Sphere::new(
         Vec3(8.0, 7.0, 20.0), 7.0, 
-        Box::new(StaticUvMapper(mat_very_reflective)), 
+        StaticUvMapper(mat_very_reflective), 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
     let front_left = Sphere::new(
         Vec3(-12.0, 4.0, 7.5), 
         4.0, 
-        Box::new(marble_mapper), 
+        marble_mapper, 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
     let front_center = Sphere::new(
         Vec3(0.0, 4.5, 5.0), 
         4.5, 
-        Box::new(StaticUvMapper(mat_coloured_diffuse)), 
+        StaticUvMapper(mat_coloured_diffuse), 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
     let front_right = Sphere::new(
         Vec3(12.0, 4.0, 7.5), 
         4.0, 
-        Box::new(StaticUvMapper(mat_refract_blurry)), 
+        StaticUvMapper(mat_refract_blurry), 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
@@ -114,7 +114,7 @@ fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use si
     let sky_sphere = Sphere::new(
         Vec3::zero(), 
         1000.0, 
-        Box::new(skysphere_mapper), 
+        skysphere_mapper, 
         Vec3Norm::up(), 
         Vec3Norm::right());
 
@@ -122,7 +122,7 @@ fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use si
         Vec3(0.0,0.0,0.0), 
         Vec3Norm::up(), 
         Vec3Norm::right(),
-        Box::new(CheckerboardUvMapper(mat_black, mat_white_reflect)), 
+        CheckerboardUvMapper(mat_black, mat_white_reflect), 
         0.1);
 
     // Scene

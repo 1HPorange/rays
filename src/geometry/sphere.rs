@@ -14,27 +14,27 @@ pub struct Sphere<T> {
 
 impl<T> Sphere<T> where T: num_traits::Float {
 
-    pub fn new(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>, up: Vec3Norm<T>, right: Vec3Norm<T>) -> Sphere<T> {
+    pub fn new<U: 'static + UvMapper<T>>(center: Vec3<T>, radius: T, uv_mapper: U, up: Vec3Norm<T>, right: Vec3Norm<T>) -> Sphere<T> {
 
         assert!(up.dot(right) < T::epsilon());
 
         Sphere {
             center,
             radius,
-            uv_mapper,
+            uv_mapper: Box::new(uv_mapper),
             up,
             right
         }
     }
 
-    pub fn with_random_right(center: Vec3<T>, radius: T, uv_mapper: Box<UvMapper<T>>, up: Vec3Norm<T>) -> Sphere<T> {
+    pub fn with_random_right<U: 'static + UvMapper<T>>(center: Vec3<T>, radius: T, uv_mapper: U, up: Vec3Norm<T>) -> Sphere<T> {
 
         let right = up.get_random_90_deg_vector().normalize();
 
         Sphere {
             center,
             radius,
-            uv_mapper,
+            uv_mapper: Box::new(uv_mapper),
             up,
             right
         }
