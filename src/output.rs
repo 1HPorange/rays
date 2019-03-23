@@ -1,7 +1,6 @@
 // TODO: Support other formats and alpha
 
 use super::color::*;
-use super::texture_uv_mapper::*;
 use std::path::{Path};
 
 use std::fs;

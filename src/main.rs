@@ -1,23 +1,7 @@
-mod vec3;
-mod raytracing;
-mod geometry;
-mod color;
-mod output;
-mod camera;
-mod scene;
-mod material;
-mod texture_uv_mapper;
+extern crate rays;
 
-use std::time::{Duration, Instant};
-use scene::*;
-use camera::*;
-use vec3::*;
-use material::*;
-use color::*;
-use raytracing::*;
-use geometry::*;
-use output::*;
-use texture_uv_mapper::*;
+use rays::prelude::*;
+use std::time::Instant;
 
 fn main() {
 
@@ -30,7 +14,7 @@ fn main() {
     let render_params = create_render_parameters();
 
     let before = Instant::now();
-    render(&scene, &camera, &mut render_target, &render_params);
+    rays::render(&scene, &camera, &mut render_target, &render_params);
     let elapsed = before.elapsed();
     println!("Finished in {}.{} s", elapsed.as_secs(), elapsed.subsec_millis());
 
@@ -40,7 +24,7 @@ fn main() {
 // Customize scene and camera setup inside the functions below
 //////////////////////////////////////////////////////////////
 
-fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single precision
+fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use single precision
 
     // Materials
 
@@ -58,13 +42,13 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
 
     let mat_glass = Material::new(
         RGBColor::WHITE, 
-        Opacity::new(0.05, 1.0, 2.0), 
+        OpacityParams::new(0.05, 1.0, 2.0), 
         ReflectionParams::new(1.0, 1.0, 1.0, 0.0), 
         RefractionParams::new(1.33, 0.0));
 
     let mat_refract_blurry = Material::new(
         RGBColor::WHITE, 
-        Opacity::new(0.1, 0.75, 3.0), 
+        OpacityParams::new(0.1, 0.75, 3.0), 
         ReflectionParams::new(0.5, 0.5, 1.0, 0.0), 
         RefractionParams::new(1.0, 10.0));
 
@@ -143,7 +127,7 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
 
     // Scene
 
-    let mut scene = Scene::new(RGBColor::WHITE);
+    let mut scene = rays::Scene::new(RGBColor::WHITE);
 
     scene.add_object(floor);
     scene.add_object(sky_sphere);
@@ -157,21 +141,21 @@ fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single p
     scene
 }
 
-fn create_camera<T>() -> Camera<T> where T: num_traits::Float {
+fn create_camera<T>() -> rays::Camera<T> where T: num_traits::Float {
 
-    let camera = Camera::default();
+    let camera = rays::Camera::default();
 
     camera
 }
 
-fn create_render_target() -> RenderTarget {
-    RenderTarget::new(1280/2, 720/2)
+fn create_render_target() -> rays::RenderTarget {
+    rays::RenderTarget::new(1280/2, 720/2)
 }
 
-fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::Float {
+fn create_render_parameters<T>() -> rays::RenderingParameters<T> where T: num_traits::Float {
 
     // TODO: Move into new function
-    RenderingParameters { 
+    rays::RenderingParameters { 
         min_intensity: T::from(0.03).unwrap(), 
         max_bounces: std::i32::MAX, 
         max_reflect_rays: 10,
@@ -184,7 +168,7 @@ fn create_render_parameters<T>() -> RenderingParameters<T> where T: num_traits::
     }
 }
 
-fn save_to_file(render_target: &RenderTarget) {
+fn save_to_file(render_target: &rays::RenderTarget) {
 
     render_target.save_as_png("D:/Downloads/weirdo.png")
         .expect("Could not write to output file");

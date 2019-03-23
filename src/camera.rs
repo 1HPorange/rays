@@ -1,6 +1,5 @@
 use super::vec3::*;
 
-use std::convert::From;
 use num_traits::NumCast;
 
 pub struct Camera<T> {
@@ -31,7 +30,7 @@ impl<T> ViewPort<T> where T: num_traits::Float {
 
 }
 
-impl<T> Camera<T> where T: num_traits::Float{
+impl<T> Camera<T> where T: num_traits::Float {
 
     pub fn default() -> Self {
 

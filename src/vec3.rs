@@ -1,5 +1,3 @@
-extern crate num_traits;
-
 use std::ops::*;
 
 // TODO: Rename this module to "vec" because this thing is in it

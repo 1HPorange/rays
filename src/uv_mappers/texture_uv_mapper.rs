@@ -1,18 +1,14 @@
-extern crate lodepng;
-
 use std::io;
 use std::path::Path;
 
 use lodepng::*;
 
-use super::material::*;
-use super::color::*;
-use super::raytracing::*;
+use crate::uv_mappers::*;
 
 #[derive(Copy, Clone)]
 pub enum SamplingMethod {
     POINT,
-    BILINEAR // TODO: Implement
+    BILINEAR
 }
 
 #[derive(Clone)]

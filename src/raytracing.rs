@@ -1,8 +1,5 @@
-extern crate rand;
 use rand::prelude::*;
 use rand::FromEntropy;
-
-extern crate rayon;
 use rayon::prelude::*;
 
 use super::vec3::*;

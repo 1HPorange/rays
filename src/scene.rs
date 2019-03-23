@@ -1,5 +1,5 @@
 use super::raytracing::*;
-use super::material::*;
+use super::uv_mappers::*;
 use super::color::*;
 
 pub trait SceneObject<T>: RayTarget<T> + HasUvMapper<T> + Send + Sync {}
