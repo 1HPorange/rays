@@ -6,7 +6,7 @@ pub fn create_scene() -> Scene<f64>  {
 
     let mat_white_diffuse = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(0.0, 0.2, 1.0, 90.0));
+        ReflectionParams::new(1.0, 1.0, 1.0, 90.0));
 
     let mat_gray = Material::pure(
         RGBColor::new(0.5, 0.5, 0.5));
@@ -23,7 +23,7 @@ pub fn create_scene() -> Scene<f64>  {
 
     let sphere = Sphere::with_random_right(
         Vec3(0.0, 7.5, 10.0),
-        6.0,
+        4.5,
         StaticUvMapper(mat_white_diffuse),
         Vec3Norm::up());
 
@@ -93,11 +93,8 @@ pub fn create_render_parameters() -> RenderParameters<f64> {
 
     let mut rp = RenderParameters::default();
     
-    rp.ao.strength = 0.7;
-    rp.ao.distance = 7.5;
-
-    rp.quality.max_bounces = 0;
-    rp.ao.samples = 20;
+    rp.ao.strength = 0.5;
+    rp.ao.distance = 6.0;
 
     rp
 }

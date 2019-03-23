@@ -30,10 +30,10 @@ impl<T> RenderParameters<T> where T: num_traits::Float {
             },
             DoFParameters {
                 max_angle: T::from(0.1).unwrap(),
-                max_samples: 30
+                max_samples: 20
             },
             SampleLimits {
-                max_reflection_samples: 10,
+                max_reflection_samples: 5,
                 max_refraction_samples: 1
             },
             AoParameters {

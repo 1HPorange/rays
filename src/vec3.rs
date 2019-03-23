@@ -88,6 +88,10 @@ impl<T> Vec3<T> where T: num_traits::Float {
         self.0 = old.0 * rad.cos() - old.1 * rad.sin();
         self.1 = old.0 * rad.sin() + old.1 * rad.cos();
     }
+
+    pub fn interpolate_into<V: Vec3View<T>>(self, target: V, t: T) -> Vec3<T> where V: Mul<T, Output=Vec3<T>> {
+        self * (T::one() - t) + target * t
+    }
 }
 
 impl<T> Vec3Norm<T> where T: num_traits::Float {

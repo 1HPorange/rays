@@ -294,7 +294,9 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     // Origin of all reflected rays including bias
     let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.quality.float_correction_bias;
-    let direction = hit_info.ray.direction.reflect(hit_info.hit.normal).into_normalized();
+    let direction = hit_info.ray.direction.reflect(hit_info.hit.normal)
+        .interpolate_into(hit_info.hit.normal, hit_info.mat.reflection.max_angle / T::from(90.0).unwrap())
+        .normalize();
 
     // Special case for perfect reflection; We only need to send out a single ray
     if hit_info.mat.reflection.max_angle.is_zero() {

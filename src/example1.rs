@@ -6,7 +6,7 @@ pub fn create_scene() -> Scene<f64>  {
 
     let mat_white_reflect = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(0.6, 0.6, 1.0, 10.0));
+        ReflectionParams::new(0.6, 0.6, 1.0, 90.0));
 
     let mat_black = Material::opaque_reflective(
         RGBColor::BLACK, 
@@ -26,11 +26,12 @@ pub fn create_scene() -> Scene<f64>  {
         RGBColor::WHITE, 
         OpacityParams::new(0.1, 0.75, 3.0), 
         ReflectionParams::new(0.5, 0.5, 1.0, 0.0), 
-        RefractionParams::new(1.0, 10.0));
+        RefractionParams::new(1.0, 6.0));
 
     let mat_coloured_diffuse = Material::opaque_reflective(
         RGBColor::new(0.2, 0.0, 0.2), 
-        ReflectionParams::new(0.4, 1.0, 2.0, 90.0));
+        //ReflectionParams::new(0.4, 0.8, 2.0, 90.0));
+        ReflectionParams::new(1.0, 1.0, 2.0, 90.0));
 
     let mat_marble = Material::opaque_reflective(
         RGBColor::PINK, // will be overwritten by uv mapper
