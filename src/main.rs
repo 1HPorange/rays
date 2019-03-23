@@ -24,7 +24,7 @@ fn main() {
 // Customize scene and camera setup inside the functions below
 //////////////////////////////////////////////////////////////
 
-fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use single precision
+fn create_scene() -> Scene<f64> { // Change into f32 if you want to use single precision
 
     // Materials
 
@@ -127,7 +127,7 @@ fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use si
 
     // Scene
 
-    let mut scene = rays::Scene::new(RGBColor::WHITE);
+    let mut scene = Scene::new(RGBColor::WHITE);
 
     scene.add_object(floor);
     scene.add_object(sky_sphere);
@@ -141,20 +141,22 @@ fn create_scene() -> rays::Scene<f64> { // Change into f32 if you want to use si
     scene
 }
 
-fn create_camera<T>() -> rays::Camera<T> where T: num_traits::Float {
+fn create_camera() -> Camera<f64> {
 
-    let camera = rays::Camera::default();
-
-    camera
+    Camera::new(
+        Vec3(0.0, 15.0, -10.0),
+        Vec3(25.0, 0.0, 0.0),
+        ViewPort { width: 16.0, height: 9.0 },
+        60.0,
+        0.1)
 }
 
-fn create_render_target() -> rays::RenderTarget {
-    rays::RenderTarget::new(1280/2, 720/2)
+fn create_render_target() -> RenderTarget {
+    RenderTarget::new(1280/2, 720/2)
 }
 
 fn create_render_parameters<T>() -> rays::RenderingParameters<T> where T: num_traits::Float {
 
-    // TODO: Move into new function
     rays::RenderingParameters { 
         min_intensity: T::from(0.03).unwrap(), 
         max_bounces: std::i32::MAX, 
@@ -168,7 +170,7 @@ fn create_render_parameters<T>() -> rays::RenderingParameters<T> where T: num_tr
     }
 }
 
-fn save_to_file(render_target: &rays::RenderTarget) {
+fn save_to_file(render_target: &RenderTarget) {
 
     render_target.save_as_png("D:/Downloads/weirdo.png")
         .expect("Could not write to output file");

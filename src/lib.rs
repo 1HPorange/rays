@@ -16,9 +16,4 @@ pub mod uv_mappers;
 
 pub mod prelude;
 
-// Re-export stuff that get only used from time to time
-
 pub use raytracing::{render, RenderingParameters};
-pub use scene::Scene;
-pub use camera::Camera;
-pub use output::RenderTarget;

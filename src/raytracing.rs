@@ -157,9 +157,9 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 fn get_initial_ray_origin<T>(camera: &Camera<T>, viewport_x: T, viewport_y: T) -> Vec3<T> where T: num_traits::Float {
 
     let mut origin = Vec3(viewport_x, viewport_y, T::zero());
-    origin.rotate_x(camera.orientation.x);
-    origin.rotate_y(camera.orientation.y);
-    origin.rotate_z(camera.orientation.z);
+    origin.rotate_x(camera.orientation.0);
+    origin.rotate_y(camera.orientation.1);
+    origin.rotate_z(camera.orientation.2);
 
     origin += camera.position;
 
@@ -187,9 +187,9 @@ fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, f
     direction.rotate_x(fov_angle_y);
 
     // Camera orientation influence
-    direction.rotate_x(camera.orientation.x);
-    direction.rotate_y(camera.orientation.y);
-    direction.rotate_z(camera.orientation.z);
+    direction.rotate_x(camera.orientation.0);
+    direction.rotate_y(camera.orientation.1);
+    direction.rotate_z(camera.orientation.2);
 
     direction.into_normalized()
 }
