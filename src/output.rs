@@ -7,31 +7,35 @@ use std::fs;
 use std::io;
 
 pub struct RenderTarget {
-    pub width: i32,
-    pub height: i32,
+    pub width: usize,
+    pub height: usize,
     data: Vec<RGBColor>
 }
 
 impl RenderTarget {
 
     // Creates a new rendertarget that is cleared to black
-    pub fn new(width: i32, height: i32) -> RenderTarget {
+    pub fn new(width: usize, height: usize) -> RenderTarget {
+
+        assert!(width > 0 && height > 0);
 
         Self::with_clear_color(width, height, &RGBColor { r: 0.0, g: 0.0, b: 0.0 })
 
     }
 
-    pub fn with_clear_color(width: i32, height: i32, clear_color: &RGBColor) -> RenderTarget {
+    pub fn with_clear_color(width: usize, height: usize, clear_color: &RGBColor) -> RenderTarget {
         
+        assert!(width > 0 && height > 0);
+
         RenderTarget {
             width, height,
-            data: vec!(*clear_color; (width * height) as usize)
+            data: vec!(*clear_color; width * height)
         }
 
     }
 
-    pub fn set_pixel(&mut self, x: i32, y: i32, color: RGBColor) {
-        self.data[(x + y * self.width) as usize] = color;
+    pub fn set_pixel(&mut self, x: usize, y: usize, color: RGBColor) {
+        self.data[x + y * self.width] = color;
     }
 
     pub fn save_as_ppm<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
@@ -69,7 +73,7 @@ impl RenderTarget {
             .map(|pix| lodepng::RGB::new(c(pix.r), c(pix.g), c(pix.b)))
             .collect::<Vec<_>>();
 
-        lodepng::encode24_file(path, &data, self.width as usize, self.height as usize)
+        lodepng::encode24_file(path, &data, self.width, self.height)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.as_str()))?;
 
         Ok(())

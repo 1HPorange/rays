@@ -1,4 +1,5 @@
 use super::vec3::*;
+use super::util;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Camera<T> {
@@ -37,4 +38,24 @@ impl<T> Camera<T> where T: num_traits::Float {
 
     }
 
+    pub fn validate(&self) -> bool {
+
+        let mut success = true;
+
+        if !util::is_in_range_exclusive(self.viewport.width, T::zero(), T::infinity()) {
+            println!("Error: Vieport width must be positive and finite");
+            success = false;
+        }
+
+        if !util::is_in_range_exclusive(self.viewport.height, T::zero(), T::infinity()) {
+            println!("Error: Vieport height must be positive and finite");
+            success = false;
+        }
+
+        if !util::is_in_range(self.fov_horizontal, T::zero(), T::from(180.0).unwrap()) {
+            println!("Warning: Viewport outside of usual range. This can be intential, but will look pretty weird.");
+        }
+
+        success
+    }
 }

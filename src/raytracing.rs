@@ -35,6 +35,14 @@ struct HitInfo<'a, T> {
 pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderParameters<T>) where 
     T: num_traits::Float + num_traits::FloatConst + Send + Sync {
 
+    if !render_params.validate() {
+        panic!("Invalid RenderParameters")
+    }
+
+    if !camera.validate() {
+        panic!("Invalid Camera settings");
+    }
+
     let raytrace_params = RaytraceParameters {
         scene,
         render_params

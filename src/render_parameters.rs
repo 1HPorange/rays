@@ -38,9 +38,7 @@ impl<T> Default for RenderParameters<T> where T: num_traits::Float {
 
 impl<T> RenderParameters<T> where T: num_traits::Float {
 
-    fn validate(&self) -> bool {
-
-        println!("Validating RenderParameters...");
+    pub fn validate(&self) -> bool {
 
         let mut success = true;
 
@@ -106,12 +104,6 @@ impl<T> RenderParameters<T> where T: num_traits::Float {
             if self.ao.samples == 0 {
                 println!("Warning: AO will not work if samples are 0");
             }
-        }
-
-        // Cleanup
-
-        if success {
-            println!("...Successful");
         }
 
         success
