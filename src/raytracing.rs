@@ -28,7 +28,7 @@ struct HitInfo<'a, T> {
     mat: &'a Material<T>,
     hit: &'a GeometryHitInfo<T>, 
     ray: &'a Ray<T>, 
-    bounces: i32, 
+    bounces: u32, 
     intensity: T
 }
 
@@ -97,9 +97,9 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
 
                 let mut color = RGBColor::BLACK;
 
-                let ray_influence = T::one() / T::from(render_params.dof.max_samples).unwrap();
+                let ray_influence = T::one() / T::from(render_params.dof.samples).unwrap();
 
-                for _ in 0..render_params.dof.max_samples {
+                for _ in 0..render_params.dof.samples {
 
                     let direction = get_initial_randomized_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
 
@@ -165,7 +165,7 @@ fn get_initial_randomized_ray_direction<T, R>(camera: &Camera<T>, rng: &mut R, d
     direction.into_normalized()
 }
 
-fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: i32, intensity: T) -> RGBColor where 
+fn raytrace_recursive<T,R>(params: &RaytraceParameters<T>, rng: &mut R, ray: Ray<T>, bounces: u32, intensity: T) -> RGBColor where 
     Vec3<T>: Vec3View<T> + std::ops::Sub<Output=Vec3<T>>,
     T: num_traits::Float + num_traits::FloatConst,
     R: Rng + ?Sized {
@@ -411,7 +411,7 @@ fn calc_steepness<T>(incoming: Vec3Norm<T>, normal: Vec3Norm<T>) -> T where T: n
     angle_rad / T::FRAC_PI_2()
 }
 
-fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_normal: Vec3Norm<T>, cone_direction: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
+fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: u32, cutoff_normal: Vec3Norm<T>, cone_direction: Vec3Norm<T>) -> Vec<Vec3Norm<T>> where 
     T: num_traits::Float,
     R: Rng + ?Sized {
 
@@ -438,7 +438,7 @@ fn gen_sample_ray_cone<T,R>(rng: &mut R, max_angle: T, max_rays: i32, cutoff_nor
         .collect::<Vec<_>>()
 }
 
-fn get_ray_count_for_intensity<T>(intensity: T, max_rays: i32) -> i32 where T: num_traits::Float {
+fn get_ray_count_for_intensity<T>(intensity: T, max_rays: u32) -> u32 where T: num_traits::Float {
 
     let max_rays = T::from(max_rays).unwrap();
     let ray_count = (T::one() + intensity * (max_rays - T::one())).round();

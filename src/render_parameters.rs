@@ -5,43 +5,30 @@ pub struct RenderParameters<T> {
     pub ao: AoParameters<T>
 }
 
-impl<T> RenderParameters<T> where T: num_traits::Float {
+impl<T> Default for RenderParameters<T> where T: num_traits::Float {
 
-    // TODO: Input validation. Actually, input validation is missing everywhere :'( And think about what struct field can be pub safely
+    fn default() -> Self {
 
-    pub fn new(quality: QualityParameters<T>, dof: DoFParameters<T>, sample_limits: SampleLimits, ao: AoParameters<T>) -> RenderParameters<T> {
-
-        RenderParameters { 
-            quality,
-            dof,
-            sample_limits,
-            ao
-        }
-
-    }
-
-    pub fn default() -> RenderParameters<T> {
-        
-        RenderParameters::new(
-            QualityParameters {
+        RenderParameters {
+            quality: QualityParameters {
                 min_intensity: T::from(0.03).unwrap(),
-                max_bounces: std::i32::MAX,
+                max_bounces: std::u32::MAX,
                 float_correction_bias: T::from(0.01).unwrap()
             },
-            DoFParameters {
+            dof: DoFParameters {
                 max_angle: T::from(0.1).unwrap(),
-                max_samples: 10
+                samples: 10
             },
-            SampleLimits {
+            sample_limits: SampleLimits {
                 max_reflection_samples: 6,
                 max_refraction_samples: 1
             },
-            AoParameters {
+            ao: AoParameters {
                 strength: T::from(0.8).unwrap(),
                 distance: T::from(2.0).unwrap(),
                 samples: 3
             }
-        )
+        }
 
     }
 
@@ -51,35 +38,57 @@ impl<T> RenderParameters<T> where T: num_traits::Float {
 
 pub struct QualityParameters<T> {
 
+    /// Range: 0-1
+    /// A ray is not allowed to spawn more rays if its total intensity falls below
+    /// this limit. Setting this value often leads to prettier results than setting
+    /// max_bounces directly
     pub min_intensity: T,
-    pub max_bounces: i32,
+
+    /// How often the raytracing function is allowed to recurse. If set to 0, no
+    /// reflective and refractive effects will be visible at all.
+    /// You can safely set this to std::u32::MAX if you set min_intensity instead
+    pub max_bounces: u32,
 
     /// Floating point errors can cause visual artifacts in reflections and refraction.
     /// This bias introduces slight inaccuracies with these phenomena, but removes the
     /// artifacts. Basically: Keep lowering this until you see artifacts
     pub float_correction_bias: T
-
 }
 
-// TODO: replace many i32 with u32
-
 pub struct SampleLimits {
+ 
+    /// Maximum number of rays that might be sent out when a reflective surface is hit
+    pub max_reflection_samples: u32,
 
-    pub max_reflection_samples: i32,
-    pub max_refraction_samples: i32
+    /// Maximum number of rays that might be sent out when a refractive surface is hit
+    pub max_refraction_samples: u32
 }
 
 pub struct DoFParameters<T> {
 
+    /// Sensible Range: Low single digit degrees
+    /// Unit: Degrees
+    /// Maximum angle deviation to the direction that an initial camera ray can get.
+    /// If set to zero, dof.samples is ignored and a single ray is sent out.
     pub max_angle: T,
-    pub max_samples: u32
+
+    /// Number of samples that each pixel in the final image consists of. This setting
+    /// is ignored (and treated as 1) when max_angle is set to 0
+    pub samples: u32
 
 }
 
 pub struct AoParameters<T> {
 
+    /// Range: 0-1
+    /// How black the AO shadows are
     pub strength: T,
+
+    /// Range: Positive World units
+    /// Fallof range of AO shadows
     pub distance: T,
-    pub samples: i32
+
+    /// How many sample rays are sent out to estimate AO
+    pub samples: u32
 
 }

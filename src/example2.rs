@@ -1,6 +1,8 @@
 use rays::prelude::*;
 
-pub fn create_scene() -> Scene<f64>  {
+type Precision = f64;
+
+pub fn create_scene() -> Scene<Precision>  {
 
     // Materials
 
@@ -80,7 +82,7 @@ pub fn create_scene() -> Scene<f64>  {
     scene
 }
 
-pub fn create_camera() -> Camera<f64> {
+pub fn create_camera() -> Camera<Precision> {
 
     Camera::new(
         Vec3(0.0, 7.5, -10.0),
@@ -89,10 +91,10 @@ pub fn create_camera() -> Camera<f64> {
         40.0)
 }
 
-pub fn create_render_parameters() -> RenderParameters<f64> {
+pub fn create_render_parameters() -> RenderParameters<Precision> {
 
     let mut rp = RenderParameters::default();
-    
+
     rp.ao.strength = 0.4;
     rp.ao.distance = 5.0;
 
