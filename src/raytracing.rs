@@ -260,16 +260,16 @@ fn hit_object<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitIn
     let incidence_angle_steepness = calc_steepness(hit_info.ray.direction, hit_info.hit.normal);
 
     // Calculate the effect of the angle of incidence on reflectivity
-    let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.edge_effect_power);
+    let incidence_reflection_influence = incidence_angle_steepness.powf(hit_info.mat.reflection.power);
     let scaled_reflection_intensity = 
-        (T::one() - incidence_reflection_influence)     * hit_info.mat.reflection.intensity_center + 
-        incidence_reflection_influence                  * hit_info.mat.reflection.intensity_edges;
+        (T::one() - incidence_reflection_influence)     * hit_info.mat.reflection.center + 
+        incidence_reflection_influence                  * hit_info.mat.reflection.edges;
 
     // Calculate the effect of the angle of incidence on refraction (object alpha)
-    let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.opacity.edge_effect_power);
+    let incidence_alpha_influence = incidence_angle_steepness.powf(hit_info.mat.opacity.power);
     let scaled_alpha = 
-        (T::one() - incidence_alpha_influence)          * hit_info.mat.opacity.opacity_center +
-        incidence_alpha_influence                       * hit_info.mat.opacity.opacity_edges;
+        (T::one() - incidence_alpha_influence)          * hit_info.mat.opacity.center +
+        incidence_alpha_influence                       * hit_info.mat.opacity.edges;
 
     // Useful for debugging: Return some interesting value as a color
     //return RGBColor::PINK * scaled_reflection_intensity;

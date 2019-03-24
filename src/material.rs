@@ -13,16 +13,16 @@ pub struct Material<T> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct OpacityParams<T> {
-    pub opacity_center: T,
-    pub opacity_edges: T,
-    pub edge_effect_power: T
+    pub center: T,
+    pub edges: T,
+    pub power: T
 }
 
 #[derive(Debug, Copy, Clone)]
 pub struct ReflectionParams<T> {
-    pub intensity_center: T,
-    pub intensity_edges: T,
-    pub edge_effect_power: T,
+    pub center: T,
+    pub edges: T,
+    pub power: T,
     pub max_angle: T
 }
 
@@ -46,7 +46,7 @@ impl<T> Material<T> where T: num_traits::Float {
     pub fn opaque_reflective(color: RGBColor, reflection: ReflectionParams<T>) -> Material<T> {
         Material {
             color,
-            opacity: OpacityParams { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
+            opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
             reflection,
             refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
         }
@@ -55,7 +55,7 @@ impl<T> Material<T> where T: num_traits::Float {
     pub fn pure(color: RGBColor) -> Material<T> {
         Material {
             color,
-            opacity: OpacityParams { opacity_center: T::one(), opacity_edges: T::one(), edge_effect_power: T::one() },
+            opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
             reflection: ReflectionParams::new(T::zero(), T::zero(), T::one(), T::zero()),
             refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
         }
@@ -67,17 +67,17 @@ impl<T> Material<T> where T: num_traits::Float {
         
         success = success && self.color.validate();
 
-        if  !util::is_in_range(self.opacity.opacity_center, T::zero(), T::one()) ||
-            !util::is_in_range(self.opacity.opacity_edges, T::zero(), T::one()) {
+        if  !util::is_in_range(self.opacity.center, T::zero(), T::one()) ||
+            !util::is_in_range(self.opacity.edges, T::zero(), T::one()) {
             println!("Warning: Opacity out of usual range 0-1. This can be desired, but might look really weird.");
         }
 
-        if !util::is_in_range(self.opacity.edge_effect_power, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.opacity.power, T::zero(), T::infinity()) {
             println!("Error: Opacity edge effect power must be 0 or positive");
             success = false;
         }
 
-        if !util::is_in_range(self.reflection.edge_effect_power, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.reflection.power, T::zero(), T::infinity()) {
             println!("Error: Reflectivity edge effect power must be 0 or positive");
             success = false;
         }
@@ -88,16 +88,16 @@ impl<T> Material<T> where T: num_traits::Float {
 
 impl<T> OpacityParams<T> {
 
-    pub fn new(opacity_center: T, opacity_edges: T, edge_effect_power: T) -> OpacityParams<T> {
-        OpacityParams { opacity_center, opacity_edges, edge_effect_power }
+    pub fn new(center: T, edges: T, power: T) -> OpacityParams<T> {
+        OpacityParams { center, edges, power }
     }
 
 }
 
 impl<T> ReflectionParams<T> {
 
-    pub fn new(intensity_center: T, intensity_edges: T, edge_effect_power: T, max_angle: T) -> ReflectionParams<T> {
-        ReflectionParams { intensity_center, intensity_edges, edge_effect_power, max_angle }
+    pub fn new(center: T, edges: T, power: T, max_angle: T) -> ReflectionParams<T> {
+        ReflectionParams { center, edges, power, max_angle }
     }
 
 }
