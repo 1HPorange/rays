@@ -14,6 +14,7 @@ mod scene;
 mod vec3;
 mod render_parameters;
 mod ray_target;
+mod util;
 
 pub mod uv_mappers;
 pub mod prelude;

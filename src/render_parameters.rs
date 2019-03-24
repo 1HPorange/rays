@@ -1,3 +1,5 @@
+use crate::util;
+
 pub struct RenderParameters<T> {
     pub quality: QualityParameters<T>,
     pub dof: DoFParameters<T>,
@@ -30,6 +32,89 @@ impl<T> Default for RenderParameters<T> where T: num_traits::Float {
             }
         }
 
+    }
+
+}
+
+impl<T> RenderParameters<T> where T: num_traits::Float {
+
+    fn validate(&self) -> bool {
+
+        println!("Validating RenderParameters...");
+
+        let mut success = true;
+
+        // Quality settings
+
+        if !util::is_in_range(self.quality.min_intensity, T::zero(), T::one()) {
+            println!("Error: Minimum intensity needs to be within 0-1 range");
+            success = false;
+        }
+
+        if self.quality.max_bounces == 0 {
+            println!("Warning: Reflections won't work with 0 max_bounces");
+        }
+
+        if self.quality.max_bounces < 2 {
+            println!("Warning: Refraction won't work properly with less than 2 max_bounces");
+        }
+
+        if !util::is_in_range(self.quality.float_correction_bias, T::zero(), T::infinity()) {
+            println!("Error: Float correction bias must be 0 or positive");
+            success = false;
+        }
+
+        // DoF
+
+        if !util::is_in_range(self.dof.max_angle, T::zero(), T::from(360.0).unwrap()) {
+            println!("Error: dof.max_angle needs to be between 0 and 360 degrees");
+            success = false;
+        }
+
+        if !self.dof.max_angle.is_zero() && self.dof.samples == 0 {
+            println!("Warning: Image will render black because of zero DoF samples, but non-zero DoF max angle.")
+        }
+
+        // Sample Limits
+
+        if self.sample_limits.max_reflection_samples == 0 {
+            println!("Warning: Reflections will not work when max_reflection_samples is 0");
+        }
+
+        if self.sample_limits.max_refraction_samples == 0 {
+            println!("Warning: Refraction won't work when max_refraction_samples is 0");
+        }
+
+        // Ao
+
+        if !util::is_in_range(self.ao.strength, T::zero(), T::one()) {
+            println!("Error: AO strength must be in range 0-1");
+            success = false;
+        }
+
+        if !util::is_in_range(self.ao.distance, T::zero(), T::infinity()) {
+            println!("Error: AO distance must be 0 or positive");
+            success = false;
+        }
+
+        if self.ao.strength > T::zero() {
+
+            if self.ao.distance.is_zero() {
+                println!("Warning: AO will not work if distance is 0");
+            }
+
+            if self.ao.samples == 0 {
+                println!("Warning: AO will not work if samples are 0");
+            }
+        }
+
+        // Cleanup
+
+        if success {
+            println!("...Successful");
+        }
+
+        success
     }
 
 }
