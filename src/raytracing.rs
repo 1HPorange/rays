@@ -36,11 +36,15 @@ pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut Rende
     T: num_traits::Float + num_traits::FloatConst + Send + Sync {
 
     if !render_params.validate() {
-        panic!("Invalid RenderParameters")
+        panic!("Invalid RenderParameters. Aborting.")
     }
 
     if !camera.validate() {
-        panic!("Invalid Camera settings");
+        panic!("Invalid Camera settings. Aborting.");
+    }
+
+    if !scene.validate() {
+        panic!("Scene contains illegal materials or colors. Aborting.")
     }
 
     let raytrace_params = RaytraceParameters {

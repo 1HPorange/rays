@@ -71,13 +71,13 @@ pub fn create_scene() -> Scene<Precision>  {
 
     let mut scene = Scene::new(RGBColor::WHITE);
 
-    scene.add_object(floor);
-    scene.add_object(ceiling);
-    scene.add_object(back_wall);
-    scene.add_object(left_wall);
-    scene.add_object(right_wall);
+    scene.add(floor);
+    scene.add(ceiling);
+    scene.add(back_wall);
+    scene.add(left_wall);
+    scene.add(right_wall);
 
-    scene.add_object(sphere);
+    scene.add(sphere);
 
     scene
 }

@@ -30,6 +30,8 @@ impl <T> TextureUvMapper<T> {
             .map(|pix| RGBColor::new(pix.r as f32 / 255.0, pix.g as f32 / 255.0, pix.b as f32 / 255.0))
             .collect::<Vec<_>>();
 
+        assert!(decoded.width > 0 && decoded.height > 0);
+
         Ok(TextureUvMapper {
             base_mat,
             pixels,
@@ -91,4 +93,7 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
         }
     }
 
+    fn validate(&self) -> bool {
+        self.base_mat.validate()
+    }
 }

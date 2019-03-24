@@ -1,3 +1,5 @@
+use crate::util;
+
 // TODO: Support other color formats?
 
 #[derive(Debug, Copy, Clone)]
@@ -23,6 +25,17 @@ impl RGBColor {
 
     pub fn new(r: f32, g: f32, b: f32) -> RGBColor {
         RGBColor { r, g, b }
+    }
+
+    pub fn validate(&self) -> bool {
+
+        if  !util::is_in_range(self.r, 0.0, 1.0) ||
+            !util::is_in_range(self.g, 0.0, 1.0) ||
+            !util::is_in_range(self.b, 0.0, 1.0) {
+            println!("Warning: Color contains one or more components outside of usual range 0-1. This can be deliberate, but might look weird.");
+        }
+        
+        true
     }
 }
 

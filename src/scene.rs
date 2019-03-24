@@ -25,9 +25,17 @@ impl<T> Scene<T> where T: num_traits::Float + num_traits::FloatConst + Send + Sy
         }
     }
 
-    pub fn add_object<O>(&mut self, object: O) where O: 'static + SceneObject<T> {
+    pub fn add<O>(&mut self, object: O) where O: 'static + SceneObject<T> {
 
         self.objects.push(Box::new(object))
+
+    }
+
+    pub fn validate(&self) -> bool {
+        
+        self.sky_color.validate() && self.objects.iter()
+            .all(|obj| obj.get_uv_mapper().validate())
+
 
     }
 }

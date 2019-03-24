@@ -10,6 +10,8 @@ pub trait UvMapper<T>: Send + Sync {
     
     fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T>;
 
+    /// Should return true of the UvMapper contains (and can produce) only legal materials
+    fn validate(&self) -> bool;
 }
 
 pub trait HasUvMapper<T> {
@@ -28,6 +30,9 @@ impl<T> UvMapper<T> for StaticUvMapper<T> where Self: Send + Sync, T: num_traits
         self.0
     }
 
+    fn validate(&self) -> bool {
+        self.0.validate()
+    }
 }
 
 pub struct CheckerboardUvMapper<T>(pub Material<T>, pub Material<T>);
@@ -47,6 +52,9 @@ impl<T> UvMapper<T> for CheckerboardUvMapper<T> where Self: Send + Sync, T: num_
         }
     }
 
+    fn validate(&self) -> bool {
+        self.0.validate() && self.1.validate()
+    }
 }
 
 pub struct DebugUvMapper;
@@ -61,4 +69,7 @@ impl<T> UvMapper<T> for DebugUvMapper where Self: Send + Sync, T: num_traits::Fl
         Material::pure(RGBColor::new(r, g, 0.0))
     }
 
+    fn validate(&self) -> bool {
+        true
+    }
 }

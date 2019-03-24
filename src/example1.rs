@@ -105,14 +105,14 @@ pub fn create_scene() -> Scene<f64>  {
 
     let mut scene = Scene::new(RGBColor::WHITE);
 
-    scene.add_object(floor);
-    scene.add_object(sky_sphere);
+    scene.add(floor);
+    scene.add(sky_sphere);
 
-    scene.add_object(back_left);
-    scene.add_object(back_right);
-    scene.add_object(front_left);
-    scene.add_object(front_center);
-    scene.add_object(front_right);
+    scene.add(back_left);
+    scene.add(back_right);
+    scene.add(front_left);
+    scene.add(front_center);
+    scene.add(front_right);
 
     scene
 }
