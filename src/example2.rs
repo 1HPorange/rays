@@ -91,9 +91,9 @@ pub fn create_camera() -> Camera<Precision> {
         40.0)
 }
 
-pub fn create_render_parameters() -> RenderParameters<Precision> {
+pub fn create_render_parameters() -> RenderParams<Precision> {
 
-    let mut rp = RenderParameters::default();
+    let mut rp = RenderParams::default();
 
     rp.ao.strength = 0.4;
     rp.ao.distance = 5.0;

@@ -51,8 +51,7 @@ impl<T> Vec3<T> where T: num_traits::Float {
 
     pub fn into_normalized(self) -> Vec3Norm<T> {
 
-        // let discrepancy: f32 = num_traits::NumCast::from(self.length() - T::one()).unwrap();
-        assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");// (Discrepancy: {})", discrepancy);
+        assert!(self.is_unit_length(), "Cannot construct normalized vector that is not unit length");
 
         Vec3Norm(self.0, self.1, self.2)
     }

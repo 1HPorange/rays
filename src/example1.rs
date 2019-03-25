@@ -1,16 +1,19 @@
 use rays::prelude::*;
 
-pub fn create_scene() -> Scene<f64>  {
+// TODO: Drop support for f32, rewrite vector to be simpler because of that, get rid of num_traits
+type Precision = f64;
+
+pub fn create_scene() -> Scene<Precision>  {
 
     // Materials
 
     let mat_white = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(0.5, 1.0, 1.0, 90.0));
+        ReflectionParams::new(-0.1, 0.8, 1.0, 20.0));
 
     let mat_black = Material::opaque_reflective(
         RGBColor::BLACK, 
-        ReflectionParams::new(0.3, 0.8, 1.0, 90.0));
+        ReflectionParams::new(0.35, 0.9, 1.0, 20.0));
 
     let mat_very_reflective = Material::opaque_reflective(
         RGBColor::WHITE,
@@ -29,8 +32,8 @@ pub fn create_scene() -> Scene<f64>  {
         RefractionParams::new(1.0, 6.0));
 
     let mat_coloured_diffuse = Material::opaque_reflective(
-        RGBColor::new(0.15, 0.0, 0.15), 
-        ReflectionParams::new(0.3, 0.8, 3.0, 30.0));
+        RGBColor::new(0.45, 0.3, 0.45), 
+        ReflectionParams::new(0.15, 0.6, 3.0, 8.0));
 
     let mat_marble = Material::opaque_reflective(
         RGBColor::PINK, // will be overwritten by uv mapper
@@ -117,7 +120,7 @@ pub fn create_scene() -> Scene<f64>  {
     scene
 }
 
-pub fn create_camera() -> Camera<f64> {
+pub fn create_camera() -> Camera<Precision> {
 
     Camera::new(
         Vec3(0.0, 15.0, -10.0),
@@ -126,8 +129,7 @@ pub fn create_camera() -> Camera<f64> {
         60.0)
 }
 
-pub fn create_render_parameters() -> RenderParameters<f64> {
+pub fn create_render_parameters() -> RenderParams<Precision> {
 
-    RenderParameters::default()
-
+    RenderParams::default()
 }

@@ -12,7 +12,7 @@ mod post_processing;
 mod raytracing;
 mod scene;
 mod vec3;
-mod render_parameters;
+mod render_params;
 mod ray_target;
 mod util;
 

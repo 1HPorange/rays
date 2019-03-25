@@ -28,7 +28,7 @@ pub struct ReflectionParams<T> {
 
 #[derive(Debug, Copy, Clone)]
 pub struct RefractionParams<T> {
-    pub index_of_refraction: T,
+    pub ior: T,
     pub max_angle: T,
 }
 
@@ -48,7 +48,7 @@ impl<T> Material<T> where T: num_traits::Float {
             color,
             opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
             reflection,
-            refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
+            refraction: RefractionParams { ior: T::one(), max_angle: T::zero() }
         }
     }
 
@@ -57,7 +57,7 @@ impl<T> Material<T> where T: num_traits::Float {
             color,
             opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
             reflection: ReflectionParams::new(T::zero(), T::zero(), T::one(), T::zero()),
-            refraction: RefractionParams { index_of_refraction: T::one(), max_angle: T::zero() }
+            refraction: RefractionParams { ior: T::one(), max_angle: T::zero() }
         }
     }
 
@@ -104,8 +104,8 @@ impl<T> ReflectionParams<T> {
 
 impl<T> RefractionParams<T> {
 
-    pub fn new(index_of_refraction: T, max_angle: T) -> RefractionParams<T> {
-        RefractionParams { index_of_refraction, max_angle }
+    pub fn new(ior: T, max_angle: T) -> RefractionParams<T> {
+        RefractionParams { ior, max_angle }
     }
 
 }

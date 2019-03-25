@@ -9,7 +9,7 @@ use super::scene::*;
 use super::color::*;
 use super::material::*;
 use super::ray_target::*;
-use super::render_parameters::*;
+use super::render_params::*;
 
 use std::cmp;
 
@@ -21,7 +21,7 @@ pub struct Ray<T> {
 // Convenience structs so we don't need to pass around so much stuff
 struct RaytraceParameters<'a, T> {
     scene: &'a Scene<T>,
-    render_params: &'a RenderParameters<T>,
+    render_params: &'a RenderParams<T>,
 }
 
 struct HitInfo<'a, T> {
@@ -32,7 +32,7 @@ struct HitInfo<'a, T> {
     intensity: T
 }
 
-pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderParameters<T>) where 
+pub fn render<T>(scene: &Scene<T>, camera: &Camera<T>, render_target: &mut RenderTarget, render_params: &RenderParams<T>) where 
     T: num_traits::Float + num_traits::FloatConst + Send + Sync {
 
     if !render_params.validate() {
@@ -221,7 +221,7 @@ fn apply_ao<T,R>(intensity: &mut T, rng: &mut R, params: &RaytraceParameters<T>,
     R: Rng + ?Sized {
 
     // Generate ray cone with full spread
-    let origin = hit.position + hit.normal * params.render_params.quality.float_correction_bias;
+    let origin = hit.position + hit.normal * params.render_params.quality.bias;
     let directions = gen_sample_ray_cone(rng, T::from(90.0).unwrap(), params.render_params.ao.samples, hit.normal, hit.normal);
 
     let closest = directions.into_iter()
@@ -305,7 +305,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
     R: Rng + ?Sized {
 
     // Origin of all reflected rays including bias
-    let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.quality.float_correction_bias;
+    let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.quality.bias;
     let direction = hit_info.ray.direction.reflect(hit_info.hit.normal)
         .interpolate_into(hit_info.hit.normal, hit_info.mat.reflection.max_angle / T::from(90.0).unwrap())
         .normalize();
@@ -319,7 +319,7 @@ fn reflect<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     } else {
 
-        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.sample_limits.max_reflection_samples);
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_samples.reflection);
 
         let ray_directions = gen_sample_ray_cone(rng, hit_info.mat.reflection.max_angle, ray_count, hit_info.hit.normal, direction);
 
@@ -351,12 +351,12 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
         let k = T::one() - refr_ratio*refr_ratio * (T::one() - hit_cos*hit_cos);
 
         if k < T::zero() {
-            let origin = hit_info.hit.position - hit_info.hit.normal * params.render_params.quality.float_correction_bias;
+            let origin = hit_info.hit.position - hit_info.hit.normal * params.render_params.quality.bias;
             let direction = hit_info.ray.direction.reflect((-hit_info.hit.normal).into_normalized()).into_normalized();
             Ray { origin, direction }
         } else {
             // Be careful here: When we leave the medium, we need the bias to take us outside of the object!
-            let origin = hit_info.hit.position - n * params.render_params.quality.float_correction_bias;
+            let origin = hit_info.hit.position - n * params.render_params.quality.bias;
             let direction = (hit_info.ray.direction * refr_ratio + hit_info.hit.normal * (refr_ratio * hit_cos - k.sqrt())).normalize();
             Ray { origin, direction }
         }
@@ -368,10 +368,10 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
     let refr_ray = if going_inside_object {
         // Air into sth else
-        get_refr_ray(T::one(), hit_info.mat.refraction.index_of_refraction, hit_info.hit.normal, -hit_cos)
+        get_refr_ray(T::one(), hit_info.mat.refraction.ior, hit_info.hit.normal, -hit_cos)
     } else {
         // Sth else into air
-        get_refr_ray(hit_info.mat.refraction.index_of_refraction, T::one(), (-hit_info.hit.normal).into_normalized(), hit_cos)
+        get_refr_ray(hit_info.mat.refraction.ior, T::one(), (-hit_info.hit.normal).into_normalized(), hit_cos)
     };
 
    
@@ -389,7 +389,7 @@ fn refract<T,R>(params: &RaytraceParameters<T>, rng: &mut R, hit_info: &HitInfo<
 
         let cutoff_normal = if going_inside_object { (-hit_info.hit.normal).into_normalized() } else { hit_info.hit.normal };
 
-        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.sample_limits.max_refraction_samples);
+        let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_samples.refraction);
 
         let directions = gen_sample_ray_cone(rng, hit_info.mat.refraction.max_angle, ray_count, cutoff_normal, refr_ray.direction);
 

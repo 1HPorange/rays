@@ -1,29 +1,29 @@
 use crate::util;
 
-pub struct RenderParameters<T> {
+pub struct RenderParams<T> {
     pub quality: QualityParameters<T>,
     pub dof: DoFParameters<T>,
-    pub sample_limits: SampleLimits,
+    pub max_samples: MaxSamples,
     pub ao: AoParameters<T>
 }
 
-impl<T> Default for RenderParameters<T> where T: num_traits::Float {
+impl<T> Default for RenderParams<T> where T: num_traits::Float {
 
     fn default() -> Self {
 
-        RenderParameters {
+        RenderParams {
             quality: QualityParameters {
                 min_intensity: T::from(0.03).unwrap(),
                 max_bounces: std::u32::MAX,
-                float_correction_bias: T::from(0.01).unwrap()
+                bias: T::from(0.01).unwrap()
             },
             dof: DoFParameters {
                 max_angle: T::from(0.1).unwrap(),
                 samples: 10
             },
-            sample_limits: SampleLimits {
-                max_reflection_samples: 6,
-                max_refraction_samples: 1
+            max_samples: MaxSamples {
+                reflection: 6,
+                refraction: 1
             },
             ao: AoParameters {
                 strength: T::from(0.8).unwrap(),
@@ -36,7 +36,7 @@ impl<T> Default for RenderParameters<T> where T: num_traits::Float {
 
 }
 
-impl<T> RenderParameters<T> where T: num_traits::Float {
+impl<T> RenderParams<T> where T: num_traits::Float {
 
     pub fn validate(&self) -> bool {
 
@@ -57,7 +57,7 @@ impl<T> RenderParameters<T> where T: num_traits::Float {
             println!("Warning: Refraction won't work properly with less than 2 max_bounces");
         }
 
-        if !util::is_in_range(self.quality.float_correction_bias, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.quality.bias, T::zero(), T::infinity()) {
             println!("Error: Float correction bias must be 0 or positive");
             success = false;
         }
@@ -75,11 +75,11 @@ impl<T> RenderParameters<T> where T: num_traits::Float {
 
         // Sample Limits
 
-        if self.sample_limits.max_reflection_samples == 0 {
+        if self.max_samples.reflection == 0 {
             println!("Warning: Reflections will not work when max_reflection_samples is 0");
         }
 
-        if self.sample_limits.max_refraction_samples == 0 {
+        if self.max_samples.refraction == 0 {
             println!("Warning: Refraction won't work when max_refraction_samples is 0");
         }
 
@@ -129,16 +129,16 @@ pub struct QualityParameters<T> {
     /// Floating point errors can cause visual artifacts in reflections and refraction.
     /// This bias introduces slight inaccuracies with these phenomena, but removes the
     /// artifacts. Basically: Keep lowering this until you see artifacts
-    pub float_correction_bias: T
+    pub bias: T
 }
 
-pub struct SampleLimits {
+pub struct MaxSamples {
  
     /// Maximum number of rays that might be sent out when a reflective surface is hit
-    pub max_reflection_samples: u32,
+    pub reflection: u32,
 
     /// Maximum number of rays that might be sent out when a refractive surface is hit
-    pub max_refraction_samples: u32
+    pub refraction: u32
 }
 
 pub struct DoFParameters<T> {
