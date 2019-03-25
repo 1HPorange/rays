@@ -53,51 +53,39 @@ pub fn create_scene() -> Scene {
     // Objects
 
     let back_left = Sphere::new(
-        Vec3::new(-8.0, 7.0, 20.0), 7.0, 
-        StaticUvMapper(mat_glass), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        Vec3::new(-8.0, 7.0, 20.0), 
+        7.0, 
+        StaticUvMapper(mat_glass));
 
     let back_right = Sphere::new(
-        Vec3::new(8.0, 7.0, 20.0), 7.0, 
-        StaticUvMapper(mat_very_reflective), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        Vec3::new(8.0, 7.0, 20.0), 
+        7.0, 
+        StaticUvMapper(mat_very_reflective));
 
     let front_left = Sphere::new(
         Vec3::new(-12.0, 4.0, 7.5), 
         4.0, 
-        marble_mapper, 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        marble_mapper);
 
     let front_center = Sphere::new(
         Vec3::new(0.0, 4.5, 5.0), 
         4.5, 
-        StaticUvMapper(mat_coloured_diffuse), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        StaticUvMapper(mat_coloured_diffuse));
 
     let front_right = Sphere::new(
         Vec3::new(12.0, 4.0, 7.5), 
         4.0, 
-        StaticUvMapper(mat_refract_blurry), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        StaticUvMapper(mat_refract_blurry));
 
     // Scenery
 
     let sky_sphere = Sphere::new(
         Vec3::ZERO, 
         1000.0, 
-        skysphere_mapper, 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT);
+        skysphere_mapper);
 
     let floor = InifinitePlane::new(
-        Vec3::new(0.0, 0.0, 0.0), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT,
+        Vec3::new(0.0, 0.0, 0.0),
         CheckerboardUvMapper(mat_black, mat_white), 
         0.1);
 
@@ -121,7 +109,7 @@ pub fn create_camera() -> Camera {
 
     let mut cam = Camera::default();
 
-    cam.position.y = 15.0;
+    cam.position = Vec3::new(0.0, 15.0, -10.0);
     cam.rotation = Vec3::new(25.0, 0.0, 0.0);
 
     cam

@@ -19,51 +19,41 @@ pub fn create_scene() -> Scene  {
 
     // Objects
 
-    //let sphere = // TODO: Interpolate reflection vector towards normal with growing angle!
-
-    let sphere = Sphere::with_random_right(
+    let sphere = Sphere::new(
         Vec3::new(0.0, 7.5, 11.0),
         4.5,
-        StaticUvMapper(mat_white_diffuse),
-        Vec3Norm::UP);
+        StaticUvMapper(mat_white_diffuse));
 
     // Scenery (walls)
 
     let floor = InifinitePlane::new(
         Vec3::new(0.0, 0.0, 0.0), 
-        Vec3Norm::UP, 
-        Vec3Norm::RIGHT,
         StaticUvMapper(mat_white_diffuse), 
         1.0);
 
-    let ceiling = InifinitePlane::new(
+    let ceiling = InifinitePlane::with_rotation(
         Vec3::new(0.0, 15.0, 0.0), 
-        Vec3Norm::DOWN, 
-        Vec3Norm::RIGHT,
+        Vec3::new(180.0, 0.0, 0.0), 
         StaticUvMapper(mat_white_diffuse), 
         1.0);
 
-    let back_wall = InifinitePlane::new(
+    let back_wall = InifinitePlane::with_rotation(
         Vec3::new(0.0, 0.0, 20.0), 
-        Vec3Norm::BACK, 
-        Vec3Norm::RIGHT,
+        Vec3::new(-90.0, 0.0, 0.0), 
         StaticUvMapper(mat_gray), 
         1.0);
 
-    let left_wall = InifinitePlane::new(
+    let left_wall = InifinitePlane::with_rotation(
         Vec3::new(-15.0, 0.0, 0.0), 
-        Vec3Norm::RIGHT, 
-        Vec3Norm::FORWARD,
+        Vec3::new(90.0, 90.0, 0.0), 
         StaticUvMapper(mat_orange), 
         1.0);
 
-    let right_wall = InifinitePlane::new(
+    let right_wall = InifinitePlane::with_rotation(
         Vec3::new(15.0, 0.0, 0.0), 
-        Vec3Norm::LEFT, 
-        Vec3Norm::FORWARD,
+        Vec3::new(90.0, -90.0, 0.0), 
         StaticUvMapper(mat_blue), 
         1.0);
-
 
     // Scene
 
@@ -84,7 +74,7 @@ pub fn create_camera() -> Camera {
 
     let mut cam = Camera::default();
 
-    cam.position.y = 7.5;
+    cam.position = Vec3::new(0.0, 7.5, -10.0);
     cam.fov_h = 40.0;
 
     cam

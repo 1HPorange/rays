@@ -1,0 +1,86 @@
+[[material]]
+name = "white"
+reflection = { center = -0.1, edges = 0.8, power = 1.0, max_angle = 20.0 }
+
+[[material]]
+name = "black"
+color = "black"
+reflection = { center = 0.35, edges = 0.9, power = 1.0, max_angle = 20.0 }
+
+[[material]]
+name = "very-reflective"
+reflection = { center = 0.75, edges = 1.0, power = 4.0, max_angle = 0.0 }
+
+[[material]]
+name = "glass"
+opacity = { center = 0.05, edges = 1.0, power = 2.0 }
+reflection = { center = 1.0, edges = 1.0, power = 1.0, max_angle = 0.0 }
+
+[[material]]
+name = "refract-blurry"
+opacity = { center = 0.1, edges = 0.75, power = 3.0 }
+reflection = { center = 0.5, edges = 0.5, power = 1.0, max_angle = 0.0 }
+refraction = { ior = 1.0, max_angle = 6.0 }
+
+[[material]]
+name = "colored-diffuse"
+color = [0.45, 0.3, 0.45]
+reflection = { center = 0.15, edges = 0.6, power = 3.0, max_angle = 8.0 }
+
+[[material]]
+name = "marble"
+reflection = { center = 0.05, edges = 0.8, power = 3.0, max_angle = 0.0 }
+
+[[uv-mappers]]
+
+[[uv-mappers.checkerboard]]
+name = "floor-tex"
+even = "black"
+odd = "white"
+
+[[uv-mappers.texture]]
+name = "sky-tex"
+path = "D:/Downloads/skysphere4.png"
+
+[[uv-mappers.texture]]
+name = "marble-tex"
+base = "marble"
+path = "D:/Downloads/skysphere3.png"
+
+[[geometry]]
+
+[[geometry.sphere]]
+uv-mapper = "glass"
+center = [-8.0, 7.0, 20.0]
+radius = 7.0
+
+[[geometry.sphere]]
+uv-mapper = "very-reflective"
+center = [8.0, 7.0, 20.0]
+radius = 7.0
+
+[[geometry.sphere]]
+uv-mapper = "marble-tex"
+center = [-12.0, 4.0, 7.5]
+radius = 4.0
+
+[[geometry.sphere]]
+uv-mapper = "colored-diffuse"
+center = [0.0, 4.5, 5.0]
+radius = 4.5
+
+[[geometry.sphere]]
+uv-mapper = "refract-blurry"
+center = [12.0, 4.0, 7.5]
+radius = 4.0
+
+[[geometry.sphere]]
+uv-mapper = "sky-tex"
+radius = 1000.0
+
+[[geometry.infinite-plane]]
+uv-mapper = "floor-tex"
+
+[[camera]]
+position = [0.0, 15.0, -10.0]
+orientation = [25.0, 0.0, 0.0]

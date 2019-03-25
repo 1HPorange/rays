@@ -54,7 +54,10 @@ impl Vec3 {
     }
 
     fn is_unit_length(&self) -> bool {
-        (self.sqr_length() - 1.0).abs() < std::f64::EPSILON
+
+        const BIG_EPSILON: f64 = 0.00001;
+
+        (self.sqr_length() - 1.0).abs() < BIG_EPSILON
     }
 
     pub fn into_normalized_unsafe(self) -> Vec3Norm {

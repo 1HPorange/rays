@@ -5,7 +5,7 @@ use crate::ray_target::*;
 
 pub struct Sphere {
 
-    center: Vec3,
+    origin: Vec3,
     radius: f64,
     uv_mapper: Box<UvMapper>,
 
@@ -15,25 +15,17 @@ pub struct Sphere {
 
 impl Sphere {
 
-    pub fn new<U: 'static + UvMapper>(center: Vec3, radius: f64, uv_mapper: U, up: Vec3Norm, right: Vec3Norm) -> Sphere {
-
-        assert!(up.dot(right) < std::f64::EPSILON);
-
-        Sphere {
-            center,
-            radius,
-            uv_mapper: Box::new(uv_mapper),
-            up,
-            right
-        }
+    pub fn new<U: 'static + UvMapper>(origin: Vec3, radius: f64, uv_mapper: U) -> Sphere {
+        Sphere::with_rotation(origin, radius, Vec3::ZERO, uv_mapper)
     }
 
-    pub fn with_random_right<U: 'static + UvMapper>(center: Vec3, radius: f64, uv_mapper: U, up: Vec3Norm) -> Sphere {
+    pub fn with_rotation<U: 'static + UvMapper>(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: U) -> Sphere {
 
-        let right = up.get_random_90_deg_vector().normalized();
+        let up = Vec3Norm::UP.rotate(rotation);
+        let right = Vec3Norm::RIGHT.rotate(rotation);
 
         Sphere {
-            center,
+            origin,
             radius,
             uv_mapper: Box::new(uv_mapper),
             up,
@@ -50,7 +42,7 @@ impl RayTarget for Sphere where {
         let rad_sqr = self.radius * self.radius;
 
         // Ray origin to sphere center
-        let orig_to_center = self.center - ray.origin;
+        let orig_to_center = self.origin - ray.origin;
 
         // If the ray starts inside, we can skip some checks, since it is a guaranteed hit
         let ray_starts_inside = orig_to_center.sqr_length() < rad_sqr;
@@ -67,7 +59,7 @@ impl RayTarget for Sphere where {
         }
             
         let orig_to_midpoint = ray.direction * orig_to_midpoint_len;
-        let midpoint_to_center_sqr = (ray.origin + orig_to_midpoint - self.center).sqr_length();
+        let midpoint_to_center_sqr = (ray.origin + orig_to_midpoint - self.origin).sqr_length();
 
         if !ray_starts_inside && midpoint_to_center_sqr > rad_sqr {
 
@@ -84,7 +76,7 @@ impl RayTarget for Sphere where {
             ray.origin + ray.direction * (orig_to_midpoint_len - midpoint_to_surface)
         };
 
-        let normal = ((hitpoint - self.center) / self.radius).into_normalized_unsafe();
+        let normal = ((hitpoint - self.origin) / self.radius).into_normalized_unsafe();
 
         let uv_x = normal
             .project_onto_plane_through_origin(self.up)

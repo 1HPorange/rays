@@ -17,32 +17,20 @@ pub struct InifinitePlane {
     uv_scale: f64,
 
     /// Calculated from normal and right. Helps with uv calculation
-    up: Vec3Norm
+    forwards: Vec3Norm
 }
 
 impl InifinitePlane {
 
-    pub fn new<U: 'static + UvMapper>(origin: Vec3, normal: Vec3Norm, right: Vec3Norm, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
-
-        // Normal and right Vector have to be at right angles
-        assert!(normal.dot(right) < std::f64::EPSILON);
-
-        let up = (-normal.cross(right)).normalized();
-
-        InifinitePlane {
-            origin,
-            normal,
-            right,
-            uv_mapper: Box::new(uv_mapper),
-            uv_scale,
-            up
-        }
+    pub fn new<U: 'static + UvMapper>(origin: Vec3, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
+        InifinitePlane::with_rotation(origin, Vec3::ZERO, uv_mapper, uv_scale)
     }
 
-    pub fn with_random_right<U: 'static + UvMapper>(origin: Vec3, normal: Vec3Norm, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
+    pub fn with_rotation<U: 'static + UvMapper>(origin: Vec3, rotation: Vec3, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
 
-        let right = normal.get_random_90_deg_vector().normalized();
-        let up = (-normal.cross(right)).normalized();
+        let normal = Vec3Norm::UP.rotate(rotation);
+        let right = Vec3Norm::RIGHT.rotate(rotation);
+        let forwards = right.cross(normal).normalized();
 
         InifinitePlane {
             origin,
@@ -50,7 +38,7 @@ impl InifinitePlane {
             right,
             uv_mapper: Box::new(uv_mapper),
             uv_scale,
-            up
+            forwards
         }
     }
 }
@@ -78,7 +66,7 @@ impl RayTarget for InifinitePlane {
                 // uv calculation
                 let orig_to_hitpoint = hitpoint - self.origin;
                 let mut uv_x = (orig_to_hitpoint.dot(self.right) * self.uv_scale).fract();
-                let mut uv_y = (orig_to_hitpoint.dot(self.up) * self.uv_scale).fract();
+                let mut uv_y = (orig_to_hitpoint.dot(self.forwards) * self.uv_scale).fract();
 
                 if uv_x < 0.0 {
                     uv_x = 1.0 + uv_x;
