@@ -53,6 +53,10 @@ impl Vec3 {
         self.sqr_length().sqrt()
     }
 
+    fn is_unit_length(&self) -> bool {
+        (self.sqr_length() - 1.0).abs() < std::f64::EPSILON
+    }
+
     pub fn into_normalized_unsafe(self) -> Vec3Norm {
 
         debug_assert!(self.is_unit_length());
@@ -93,7 +97,6 @@ pub trait Vec3View: Copy {
     fn z(self) -> f64;
 
     fn is_zero(&self) -> bool;
-    fn is_unit_length(&self) -> bool;
 
     // Free implementations
 
@@ -176,14 +179,6 @@ impl Vec3View for Vec3 {
         self.y() == 0.0 &&
         self.z() == 0.0
     }
-
-    fn is_unit_length(&self) -> bool {
-
-        // Used because the normal epsilon is too small TODO: Re-check if i really need this
-        const BIG_EPSILON: f64 = 0.00001;
-
-        (self.sqr_length() - 1.0).abs() < BIG_EPSILON
-    }
 }
 
 impl Vec3View for Vec3Norm {
@@ -194,10 +189,6 @@ impl Vec3View for Vec3Norm {
 
     fn is_zero(&self) -> bool {
         false
-    }
-
-    fn is_unit_length(&self) -> bool {
-        true
     }
 }
 
