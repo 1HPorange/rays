@@ -5,7 +5,7 @@ use super::util;
 pub struct Camera {
 
     pub position: Vec3,
-    pub orientation: Vec3,
+    pub rotation: Vec3,
     pub viewport: ViewPort,
     pub fov_h: f64
 }
@@ -26,12 +26,12 @@ impl ViewPort {
 
 impl Camera {
 
-    /// Orientation in degrees around the x,y, and z axis
-    pub fn new(position: Vec3, orientation: Vec3, viewport: ViewPort, fov_h: f64) -> Camera {
+    /// Rotation in degrees around the x,y, and z axis
+    pub fn new(position: Vec3, rotation: Vec3, viewport: ViewPort, fov_h: f64) -> Camera {
 
         Camera {
             position,
-            orientation,
+            rotation,
             viewport,
             fov_h
         }
@@ -63,7 +63,7 @@ impl Default for Camera {
     fn default() -> Self {
         Camera {
             position: Vec3::new(0.0, 0.0, -10.0),
-            orientation: Vec3::ZERO,
+            rotation: Vec3::ZERO,
             viewport: ViewPort { width: 16.0, height: 9.0 },
             fov_h: 60.0
         }

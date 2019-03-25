@@ -15,7 +15,7 @@ impl Default for RenderParams {
             quality: QualityParameters {
                 min_intensity: 0.03,
                 max_bounces: std::u32::MAX,
-                bias: 0.01
+                bias: 0.0001
             },
             dof: DoFParameters {
                 max_angle: 0.1,

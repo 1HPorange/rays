@@ -240,6 +240,13 @@ macro_rules! overlapping_impl {
                 Self { x, y, z }
             }
 
+            pub fn rotate(self, rotation: Vec3) -> Self {
+
+                self.rotate_x(rotation.x)
+                    .rotate_y(rotation.y)
+                    .rotate_z(rotation.z)
+            }
+
             // https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
             pub fn rotate_around_axis(self, u: Vec3Norm, deg: f64) -> Self {
                 

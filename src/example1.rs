@@ -122,7 +122,7 @@ pub fn create_camera() -> Camera {
     let mut cam = Camera::default();
 
     cam.position.y = 15.0;
-    cam.orientation = Vec3::new(25.0, 0.0, 0.0);
+    cam.rotation = Vec3::new(25.0, 0.0, 0.0);
 
     cam
 }

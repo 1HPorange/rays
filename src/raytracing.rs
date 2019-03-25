@@ -138,9 +138,7 @@ pub fn render(scene: &Scene, camera: &Camera, render_target: &mut RenderTarget, 
 fn get_initial_ray_origin(camera: &Camera, viewport_x: f64, viewport_y: f64) -> Vec3 {
 
     let mut origin = Vec3::new(viewport_x, viewport_y, 0.0)
-        .rotate_x(camera.orientation.x)
-        .rotate_y(camera.orientation.y)
-        .rotate_z(camera.orientation.z);
+        .rotate(camera.rotation);
 
     origin += camera.position;
 
@@ -168,9 +166,7 @@ fn get_initial_randomized_ray_direction<R: Rng + ?Sized>(camera: &Camera, rng: &
         .rotate_y(fov_angle_x)
         .rotate_x(fov_angle_y)
     // Camera orientation influence
-        .rotate_x(camera.orientation.x)
-        .rotate_y(camera.orientation.y)
-        .rotate_z(camera.orientation.z);
+        .rotate(camera.rotation);
 
     direction
 }
