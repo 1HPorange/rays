@@ -63,13 +63,13 @@ pub fn render(scene: &Scene, camera: &Camera, render_target: &mut RenderTarget, 
     let y_start = (camera.viewport.height - y_step) / 2.0;
 
     // Angle distances between two pixels
-    let fov_vertical = camera.fov_horizontal / camera.viewport.aspect();
+    let fov_v = camera.fov_h / camera.viewport.aspect();
 
-    let x_angle_step = camera.fov_horizontal / w;
-    let x_angle_start = (x_angle_step - camera.fov_horizontal) / 2.0;
+    let x_angle_step = camera.fov_h / w;
+    let x_angle_start = (x_angle_step - camera.fov_h) / 2.0;
 
-    let y_angle_step = fov_vertical / h;
-    let y_angle_start = (y_angle_step - fov_vertical) / 2.0;
+    let y_angle_step = fov_v / h;
+    let y_angle_start = (y_angle_step - fov_v) / 2.0;
 
     let rt_width = render_target.width;
     let rt_height = render_target.height;

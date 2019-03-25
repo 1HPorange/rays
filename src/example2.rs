@@ -82,11 +82,12 @@ pub fn create_scene() -> Scene  {
 
 pub fn create_camera() -> Camera {
 
-    Camera::new(
-        Vec3::new(0.0, 7.5, -10.0),
-        Vec3::ZERO,
-        ViewPort { width: 16.0, height: 9.0 },
-        40.0)
+    let mut cam = Camera::default();
+
+    cam.position.y = 7.5;
+    cam.fov_h = 40.0;
+
+    cam
 }
 
 pub fn create_render_parameters() -> RenderParams {

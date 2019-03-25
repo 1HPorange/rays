@@ -7,7 +7,7 @@ pub struct Camera {
     pub position: Vec3,
     pub orientation: Vec3,
     pub viewport: ViewPort,
-    pub fov_horizontal: f64
+    pub fov_h: f64
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -26,16 +26,15 @@ impl ViewPort {
 
 impl Camera {
 
-    // Orientation in degrees around the x,y, and z axis
-    pub fn new(position: Vec3, orientation: Vec3, viewport: ViewPort, fov_horizontal: f64) -> Camera {
+    /// Orientation in degrees around the x,y, and z axis
+    pub fn new(position: Vec3, orientation: Vec3, viewport: ViewPort, fov_h: f64) -> Camera {
 
         Camera {
             position,
             orientation,
             viewport,
-            fov_horizontal
+            fov_h
         }
-
     }
 
     pub fn validate(&self) -> bool {
@@ -52,10 +51,21 @@ impl Camera {
             success = false;
         }
 
-        if !util::is_in_range(self.fov_horizontal, 0.0, 180.0) {
-            println!("Warning: Viewport outside of usual range. This can be intential, but will look pretty weird.");
+        if !util::is_in_range(self.fov_h, 0.0, 180.0) {
+            println!("Warning: FoV outside of usual range. This can be intential, but will look pretty weird.");
         }
 
         success
+    }
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        Camera {
+            position: Vec3::new(0.0, 0.0, -10.0),
+            orientation: Vec3::ZERO,
+            viewport: ViewPort { width: 16.0, height: 9.0 },
+            fov_h: 60.0
+        }
     }
 }
