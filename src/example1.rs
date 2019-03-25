@@ -1,4 +1,5 @@
 use rays::prelude::*;
+use std::sync::Arc;
 
 pub fn create_scene() -> Scene {
 
@@ -55,38 +56,38 @@ pub fn create_scene() -> Scene {
     let back_left = Sphere::new(
         Vec3::new(-8.0, 7.0, 20.0), 
         7.0, 
-        StaticUvMapper(mat_glass));
+        Arc::new(StaticUvMapper(mat_glass)));
 
     let back_right = Sphere::new(
         Vec3::new(8.0, 7.0, 20.0), 
         7.0, 
-        StaticUvMapper(mat_very_reflective));
+        Arc::new(StaticUvMapper(mat_very_reflective)));
 
     let front_left = Sphere::new(
         Vec3::new(-12.0, 4.0, 7.5), 
         4.0, 
-        marble_mapper);
+        Arc::new(marble_mapper));
 
     let front_center = Sphere::new(
         Vec3::new(0.0, 4.5, 5.0), 
         4.5, 
-        StaticUvMapper(mat_coloured_diffuse));
+        Arc::new(StaticUvMapper(mat_coloured_diffuse)));
 
     let front_right = Sphere::new(
         Vec3::new(12.0, 4.0, 7.5), 
         4.0, 
-        StaticUvMapper(mat_refract_blurry));
+        Arc::new(StaticUvMapper(mat_refract_blurry)));
 
     // Scenery
 
     let sky_sphere = Sphere::new(
         Vec3::ZERO, 
         1000.0, 
-        skysphere_mapper);
+        Arc::new(skysphere_mapper));
 
     let floor = InifinitePlane::new(
         Vec3::new(0.0, 0.0, 0.0),
-        CheckerboardUvMapper(mat_black, mat_white), 
+        Arc::new(CheckerboardUvMapper(mat_black, mat_white)), 
         0.1);
 
     // Scene

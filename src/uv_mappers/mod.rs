@@ -16,7 +16,7 @@ pub trait UvMapper: Send + Sync {
 
 pub trait HasUvMapper {
 
-    fn get_uv_mapper(&self) -> &Box<UvMapper>;
+    fn get_uv_mapper(&self) -> &std::sync::Arc<dyn UvMapper>;
 
 }
 

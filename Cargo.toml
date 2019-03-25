@@ -8,3 +8,5 @@ edition = "2018"
 rand = "0.6.5"
 rayon = "1.0.3"
 lodepng = "2.4.2"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.0"

@@ -2,6 +2,7 @@ use crate::vec::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
 use crate::ray_target::*;
+use std::sync::Arc;
 
 pub struct InifinitePlane {
     origin: Vec3,
@@ -9,7 +10,7 @@ pub struct InifinitePlane {
 
     /// Used for mapping the uv x direction
     right: Vec3Norm,
-    uv_mapper: Box<UvMapper>,
+    uv_mapper: Arc<dyn UvMapper>,
 
     /// A scale of one goes through one UV cycle per world unit.
     /// Higher scales squeeze the uv mapping, while lower scales
@@ -22,11 +23,11 @@ pub struct InifinitePlane {
 
 impl InifinitePlane {
 
-    pub fn new<U: 'static + UvMapper>(origin: Vec3, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
+    pub fn new(origin: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64) -> InifinitePlane {
         InifinitePlane::with_rotation(origin, Vec3::ZERO, uv_mapper, uv_scale)
     }
 
-    pub fn with_rotation<U: 'static + UvMapper>(origin: Vec3, rotation: Vec3, uv_mapper: U, uv_scale: f64) -> InifinitePlane {
+    pub fn with_rotation(origin: Vec3, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64) -> InifinitePlane {
 
         let normal = Vec3Norm::UP.rotate(rotation);
         let right = Vec3Norm::RIGHT.rotate(rotation);
@@ -36,7 +37,7 @@ impl InifinitePlane {
             origin,
             normal,
             right,
-            uv_mapper: Box::new(uv_mapper),
+            uv_mapper,
             uv_scale,
             forwards
         }
@@ -90,7 +91,7 @@ impl RayTarget for InifinitePlane {
 
 impl HasUvMapper for InifinitePlane {
 
-    fn get_uv_mapper(&self) -> &Box<UvMapper> {
+    fn get_uv_mapper(&self) -> &Arc<dyn UvMapper> {
         &self.uv_mapper
     }
 

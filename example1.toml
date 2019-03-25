@@ -1,84 +1,80 @@
-[[material]]
+[[materials]]
 name = "white"
 reflection = { center = -0.1, edges = 0.8, power = 1.0, max_angle = 20.0 }
 
-[[material]]
+[[materials]]
 name = "black"
-color = "black"
+color = [0.0, 0.0, 0.0]
 reflection = { center = 0.35, edges = 0.9, power = 1.0, max_angle = 20.0 }
 
-[[material]]
+[[materials]]
 name = "very-reflective"
 reflection = { center = 0.75, edges = 1.0, power = 4.0, max_angle = 0.0 }
 
-[[material]]
+[[materials]]
 name = "glass"
 opacity = { center = 0.05, edges = 1.0, power = 2.0 }
 reflection = { center = 1.0, edges = 1.0, power = 1.0, max_angle = 0.0 }
 
-[[material]]
+[[materials]]
 name = "refract-blurry"
 opacity = { center = 0.1, edges = 0.75, power = 3.0 }
 reflection = { center = 0.5, edges = 0.5, power = 1.0, max_angle = 0.0 }
 refraction = { ior = 1.0, max_angle = 6.0 }
 
-[[material]]
+[[materials]]
 name = "colored-diffuse"
 color = [0.45, 0.3, 0.45]
 reflection = { center = 0.15, edges = 0.6, power = 3.0, max_angle = 8.0 }
 
-[[material]]
+[[materials]]
 name = "marble"
 reflection = { center = 0.05, edges = 0.8, power = 3.0, max_angle = 0.0 }
 
-[[uv-mappers]]
-
-[[uv-mappers.checkerboard]]
+[[uvm-checkerboard]]
 name = "floor-tex"
 even = "black"
 odd = "white"
 
-[[uv-mappers.texture]]
+[[uvm-texture]]
 name = "sky-tex"
 path = "D:/Downloads/skysphere4.png"
 
-[[uv-mappers.texture]]
+[[uvm-texture]]
 name = "marble-tex"
 base = "marble"
 path = "D:/Downloads/skysphere3.png"
 
-[[geometry]]
-
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "glass"
 center = [-8.0, 7.0, 20.0]
 radius = 7.0
 
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "very-reflective"
 center = [8.0, 7.0, 20.0]
 radius = 7.0
 
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "marble-tex"
 center = [-12.0, 4.0, 7.5]
 radius = 4.0
 
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "colored-diffuse"
 center = [0.0, 4.5, 5.0]
 radius = 4.5
 
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "refract-blurry"
 center = [12.0, 4.0, 7.5]
 radius = 4.0
 
-[[geometry.sphere]]
+[[obj-sphere]]
 uv-mapper = "sky-tex"
 radius = 1000.0
 
-[[geometry.infinite-plane]]
+[[obj-infinite-plane]]
 uv-mapper = "floor-tex"
 
 [[camera]]

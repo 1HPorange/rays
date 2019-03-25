@@ -11,6 +11,9 @@ use std::time::Instant;
 
 fn main() {
 
+    let config = rays::parse("example1.toml")
+        .expect("Could not read config"); // TODO: Detailed error
+
     let scene = example2::create_scene();
 
     let camera = example2::create_camera();
