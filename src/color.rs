@@ -4,18 +4,18 @@ use crate::util;
 
 #[derive(Debug, Copy, Clone)]
 pub struct RGBColor {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32
+    pub r: f64,
+    pub g: f64,
+    pub b: f64
 }
 
-#[derive(Debug, Copy, Clone)]
-pub struct RGBAColor {
-    pub r: f32,
-    pub g: f32,
-    pub b: f32,
-    pub a: f32
-}
+// #[derive(Debug, Copy, Clone)]
+// pub struct RGBAColor {
+//     pub r: f64,
+//     pub g: f64,
+//     pub b: f64,
+//     pub a: f64
+// }
 
 impl RGBColor {
     pub const BLACK: RGBColor = RGBColor { r: 0.0, g: 0.0, b: 0.0 };
@@ -23,7 +23,7 @@ impl RGBColor {
     pub const WHITE: RGBColor = RGBColor { r: 1.0, g: 1.0, b: 1.0 };
     pub const EVENING_BLUE: RGBColor = RGBColor { r: 0.090, g: 0.160, b: 0.368 };
 
-    pub fn new(r: f32, g: f32, b: f32) -> RGBColor {
+    pub fn new(r: f64, g: f64, b: f64) -> RGBColor {
         RGBColor { r, g, b }
     }
 
@@ -53,13 +53,11 @@ impl From<RGBColor> for [u8;3] {
 
 }
 
-impl<S> std::ops::Mul<S> for RGBColor where S: num_traits::Float {
+impl std::ops::Mul<f64> for RGBColor {
 
     type Output = RGBColor;
 
-    fn mul(self, rhs: S) -> Self::Output {
-
-        let rhs: f32 = num_traits::NumCast::from(rhs).unwrap();
+    fn mul(self, rhs: f64) -> Self::Output {
 
         RGBColor {
             r: self.r * rhs,
@@ -69,7 +67,7 @@ impl<S> std::ops::Mul<S> for RGBColor where S: num_traits::Float {
     }
 }
 
-impl<S> std::ops::Div<S> for RGBColor where f32: std::ops::Div<S, Output=f32>, S: Copy {
+impl<S> std::ops::Div<S> for RGBColor where f64: std::ops::Div<S, Output=f64>, S: Copy {
 
     type Output = RGBColor;
 
@@ -106,18 +104,18 @@ impl std::ops::AddAssign for RGBColor {
 
 }
 
-impl From<RGBAColor> for RGBColor {
+// impl From<RGBAColor> for RGBColor {
 
-    fn from(col: RGBAColor) -> RGBColor {
-        RGBColor { r: col.r, g: col.g, b: col.b }
-    }
+//     fn from(col: RGBAColor) -> RGBColor {
+//         RGBColor { r: col.r, g: col.g, b: col.b }
+//     }
 
-}
+// }
 
-impl From<RGBColor> for RGBAColor {
+// impl From<RGBColor> for RGBAColor {
 
-    fn from(col: RGBColor) -> RGBAColor {
-        RGBAColor { r: col.r, g: col.g, b: col.b, a: 1.0 }
-    }
+//     fn from(col: RGBColor) -> RGBAColor {
+//         RGBAColor { r: col.r, g: col.g, b: col.b, a: 1.0 }
+//     }
 
-}
+// }

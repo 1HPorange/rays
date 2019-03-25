@@ -6,27 +6,27 @@ mod texture_uv_mapper;
 
 pub use texture_uv_mapper::{TextureUvMapper, SamplingMethod};
 
-pub trait UvMapper<T>: Send + Sync {
+pub trait UvMapper: Send + Sync {
     
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T>;
+    fn get_material_at(&self, rch: &GeometryHitInfo) -> Material;
 
     /// Should return true of the UvMapper contains (and can produce) only legal materials
     fn validate(&self) -> bool;
 }
 
-pub trait HasUvMapper<T> {
+pub trait HasUvMapper {
 
-    fn get_uv_mapper(&self) -> &Box<UvMapper<T>>;
+    fn get_uv_mapper(&self) -> &Box<UvMapper>;
 
 }
 
 // Simple UV mapper implementations
 
-pub struct StaticUvMapper<T>(pub Material<T>);
+pub struct StaticUvMapper(pub Material);
 
-impl<T> UvMapper<T> for StaticUvMapper<T> where Self: Send + Sync, T: num_traits::Float {
+impl UvMapper for StaticUvMapper /*where Self: Send + Sync*/ {
 
-    fn get_material_at(&self, _rch: &GeometryHitInfo<T>) -> Material<T> {
+    fn get_material_at(&self, _rch: &GeometryHitInfo) -> Material {
         self.0
     }
 
@@ -35,15 +35,14 @@ impl<T> UvMapper<T> for StaticUvMapper<T> where Self: Send + Sync, T: num_traits
     }
 }
 
-pub struct CheckerboardUvMapper<T>(pub Material<T>, pub Material<T>);
+pub struct CheckerboardUvMapper(pub Material, pub Material);
 
-impl<T> UvMapper<T> for CheckerboardUvMapper<T> where Self: Send + Sync, T: num_traits::Float {
+impl UvMapper for CheckerboardUvMapper /*where Self: Send + Sync*/ {
 
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
+    fn get_material_at(&self, rch: &GeometryHitInfo) -> Material {
         
-        let half = T::from(0.5).unwrap();
-        let x = rch.uv.0 > half;
-        let y = rch.uv.1 > half;
+        let x = rch.uv.u > 0.5;
+        let y = rch.uv.v > 0.5;
 
         if x != y {
             self.0
@@ -59,14 +58,10 @@ impl<T> UvMapper<T> for CheckerboardUvMapper<T> where Self: Send + Sync, T: num_
 
 pub struct DebugUvMapper;
 
-impl<T> UvMapper<T> for DebugUvMapper where Self: Send + Sync, T: num_traits::Float {
+impl UvMapper for DebugUvMapper /* where Self: Send + Sync*/ {
 
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
-        
-        let r: f32 = num_traits::NumCast::from(rch.uv.0).unwrap();
-        let g: f32 = num_traits::NumCast::from(rch.uv.1).unwrap();
-
-        Material::pure(RGBColor::new(r, g, 0.0))
+    fn get_material_at(&self, rch: &GeometryHitInfo) -> Material {
+        Material::pure(RGBColor::new(rch.uv.u, rch.uv.v, 0.0))
     }
 
     fn validate(&self) -> bool {

@@ -11,13 +11,13 @@ use std::time::Instant;
 
 fn main() {
 
-    let scene = example1::create_scene();
+    let scene = example2::create_scene();
 
-    let camera = example1::create_camera();
+    let camera = example2::create_camera();
 
     let mut render_target = RenderTarget::new(1920/2, 1080/2);
 
-    let render_params = example1::create_render_parameters();
+    let render_params = example2::create_render_parameters();
 
     let before = Instant::now();
 

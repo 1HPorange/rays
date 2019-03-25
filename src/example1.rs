@@ -1,43 +1,40 @@
 use rays::prelude::*;
 
-// TODO: Drop support for f32, rewrite vector to be simpler because of that, get rid of num_traits
-type Precision = f64;
-
-pub fn create_scene() -> Scene<Precision>  {
+pub fn create_scene() -> Scene {
 
     // Materials
 
     let mat_white = Material::opaque_reflective(
         RGBColor::WHITE, 
-        ReflectionParams::new(-0.1, 0.8, 1.0, 20.0));
+        Reflection::new(-0.1, 0.8, 1.0, 20.0));
 
     let mat_black = Material::opaque_reflective(
         RGBColor::BLACK, 
-        ReflectionParams::new(0.35, 0.9, 1.0, 20.0));
+        Reflection::new(0.35, 0.9, 1.0, 20.0));
 
     let mat_very_reflective = Material::opaque_reflective(
         RGBColor::WHITE,
-        ReflectionParams::new(0.75, 1.0, 4.0, 0.0));
+        Reflection::new(0.75, 1.0, 4.0, 0.0));
 
     let mat_glass = Material::new(
         RGBColor::WHITE, 
-        OpacityParams::new(0.05, 1.0, 2.0), 
-        ReflectionParams::new(1.0, 1.0, 1.0, 0.0), 
-        RefractionParams::new(1.33, 0.0));
+        Opacity::new(0.05, 1.0, 2.0), 
+        Reflection::new(1.0, 1.0, 1.0, 0.0), 
+        Refraction::new(1.33, 0.0));
 
     let mat_refract_blurry = Material::new(
         RGBColor::WHITE, 
-        OpacityParams::new(0.1, 0.75, 3.0), 
-        ReflectionParams::new(0.5, 0.5, 1.0, 0.0), 
-        RefractionParams::new(1.0, 6.0));
+        Opacity::new(0.1, 0.75, 3.0), 
+        Reflection::new(0.5, 0.5, 1.0, 0.0), 
+        Refraction::new(1.0, 6.0));
 
     let mat_coloured_diffuse = Material::opaque_reflective(
         RGBColor::new(0.45, 0.3, 0.45), 
-        ReflectionParams::new(0.15, 0.6, 3.0, 8.0));
+        Reflection::new(0.15, 0.6, 3.0, 8.0));
 
     let mat_marble = Material::opaque_reflective(
         RGBColor::PINK, // will be overwritten by uv mapper
-        ReflectionParams::new(0.05, 0.8, 3.0, 0.0));
+        Reflection::new(0.05, 0.8, 3.0, 0.0));
 
     // Textured UV Mappers
 
@@ -56,51 +53,51 @@ pub fn create_scene() -> Scene<Precision>  {
     // Objects
 
     let back_left = Sphere::new(
-        Vec3(-8.0, 7.0, 20.0), 7.0, 
+        Vec3::new(-8.0, 7.0, 20.0), 7.0, 
         StaticUvMapper(mat_glass), 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     let back_right = Sphere::new(
-        Vec3(8.0, 7.0, 20.0), 7.0, 
+        Vec3::new(8.0, 7.0, 20.0), 7.0, 
         StaticUvMapper(mat_very_reflective), 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     let front_left = Sphere::new(
-        Vec3(-12.0, 4.0, 7.5), 
+        Vec3::new(-12.0, 4.0, 7.5), 
         4.0, 
         marble_mapper, 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     let front_center = Sphere::new(
-        Vec3(0.0, 4.5, 5.0), 
+        Vec3::new(0.0, 4.5, 5.0), 
         4.5, 
         StaticUvMapper(mat_coloured_diffuse), 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     let front_right = Sphere::new(
-        Vec3(12.0, 4.0, 7.5), 
+        Vec3::new(12.0, 4.0, 7.5), 
         4.0, 
         StaticUvMapper(mat_refract_blurry), 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     // Scenery
 
     let sky_sphere = Sphere::new(
-        Vec3::zero(), 
+        Vec3::ZERO, 
         1000.0, 
         skysphere_mapper, 
-        Vec3Norm::up(), 
-        Vec3Norm::right());
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT);
 
     let floor = InifinitePlane::new(
-        Vec3(0.0, 0.0, 0.0), 
-        Vec3Norm::up(), 
-        Vec3Norm::right(),
+        Vec3::new(0.0, 0.0, 0.0), 
+        Vec3Norm::UP, 
+        Vec3Norm::RIGHT,
         CheckerboardUvMapper(mat_black, mat_white), 
         0.1);
 
@@ -120,16 +117,16 @@ pub fn create_scene() -> Scene<Precision>  {
     scene
 }
 
-pub fn create_camera() -> Camera<Precision> {
+pub fn create_camera() -> Camera {
 
     Camera::new(
-        Vec3(0.0, 15.0, -10.0),
-        Vec3(25.0, 0.0, 0.0),
+        Vec3::new(0.0, 15.0, -10.0),
+        Vec3::new(25.0, 0.0, 0.0),
         ViewPort { width: 16.0, height: 9.0 },
         60.0)
 }
 
-pub fn create_render_parameters() -> RenderParams<Precision> {
+pub fn create_render_parameters() -> RenderParams {
 
     RenderParams::default()
 }

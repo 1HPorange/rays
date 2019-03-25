@@ -1,33 +1,33 @@
-use super::vec3::*;
+use super::vec::*;
 use super::util;
 
 #[derive(Debug, Copy, Clone)]
-pub struct Camera<T> {
+pub struct Camera {
 
-    pub position: Vec3<T>,
-    pub orientation: Vec3<T>,
-    pub viewport: ViewPort<T>,
-    pub fov_horizontal: T
+    pub position: Vec3,
+    pub orientation: Vec3,
+    pub viewport: ViewPort,
+    pub fov_horizontal: f64
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct ViewPort<T> {
-    pub width: T,
-    pub height: T
+pub struct ViewPort {
+    pub width: f64,
+    pub height: f64
 }
 
-impl<T> ViewPort<T> where T: num_traits::Float {
+impl ViewPort {
 
-    pub fn aspect(&self) -> T {
+    pub fn aspect(&self) -> f64 {
         self.width / self.height
     }
 
 }
 
-impl<T> Camera<T> where T: num_traits::Float {
+impl Camera {
 
     // Orientation in degrees around the x,y, and z axis
-    pub fn new(position: Vec3<T>, orientation: Vec3<T>, viewport: ViewPort<T>, fov_horizontal: T) -> Camera<T> {
+    pub fn new(position: Vec3, orientation: Vec3, viewport: ViewPort, fov_horizontal: f64) -> Camera {
 
         Camera {
             position,
@@ -42,17 +42,17 @@ impl<T> Camera<T> where T: num_traits::Float {
 
         let mut success = true;
 
-        if !util::is_in_range_exclusive(self.viewport.width, T::zero(), T::infinity()) {
+        if !util::is_in_range_exclusive(self.viewport.width, 0.0, std::f64::INFINITY) {
             println!("Error: Vieport width must be positive and finite");
             success = false;
         }
 
-        if !util::is_in_range_exclusive(self.viewport.height, T::zero(), T::infinity()) {
+        if !util::is_in_range_exclusive(self.viewport.height, 0.0, std::f64::INFINITY) {
             println!("Error: Vieport height must be positive and finite");
             success = false;
         }
 
-        if !util::is_in_range(self.fov_horizontal, T::zero(), T::from(180.0).unwrap()) {
+        if !util::is_in_range(self.fov_horizontal, 0.0, 180.0) {
             println!("Warning: Viewport outside of usual range. This can be intential, but will look pretty weird.");
         }
 

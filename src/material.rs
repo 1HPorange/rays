@@ -4,37 +4,37 @@ use crate::util;
 // TODO: Supply useful default values for all these things
 
 #[derive(Debug, Copy, Clone)]
-pub struct Material<T> {
+pub struct Material {
     pub color: RGBColor, // alpha determines how many rays pass through the material and are potentially refracted
-    pub opacity: OpacityParams<T>,
-    pub reflection: ReflectionParams<T>,
-    pub refraction: RefractionParams<T>,
+    pub opacity: Opacity,
+    pub reflection: Reflection,
+    pub refraction: Refraction,
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct OpacityParams<T> {
-    pub center: T,
-    pub edges: T,
-    pub power: T
+pub struct Opacity {
+    pub center: f64,
+    pub edges: f64,
+    pub power: f64
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct ReflectionParams<T> {
-    pub center: T,
-    pub edges: T,
-    pub power: T,
-    pub max_angle: T
+pub struct Reflection {
+    pub center: f64,
+    pub edges: f64,
+    pub power: f64,
+    pub max_angle: f64
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct RefractionParams<T> {
-    pub ior: T,
-    pub max_angle: T,
+pub struct Refraction {
+    pub ior: f64,
+    pub max_angle: f64,
 }
 
-impl<T> Material<T> where T: num_traits::Float {
+impl Material {
 
-    pub fn new(color: RGBColor, opacity: OpacityParams<T>, reflection: ReflectionParams<T>, refraction: RefractionParams<T>) -> Material<T> {
+    pub fn new(color: RGBColor, opacity: Opacity, reflection: Reflection, refraction: Refraction) -> Material {
         Material {
             color,
             opacity,
@@ -43,21 +43,21 @@ impl<T> Material<T> where T: num_traits::Float {
         }
     }
 
-    pub fn opaque_reflective(color: RGBColor, reflection: ReflectionParams<T>) -> Material<T> {
+    pub fn opaque_reflective(color: RGBColor, reflection: Reflection) -> Material {
         Material {
             color,
-            opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
+            opacity: Opacity::default(),
             reflection,
-            refraction: RefractionParams { ior: T::one(), max_angle: T::zero() }
+            refraction: Refraction::default()
         }
     }
 
-    pub fn pure(color: RGBColor) -> Material<T> {
+    pub fn pure(color: RGBColor) -> Material {
         Material {
             color,
-            opacity: OpacityParams { center: T::one(), edges: T::one(), power: T::one() },
-            reflection: ReflectionParams::new(T::zero(), T::zero(), T::one(), T::zero()),
-            refraction: RefractionParams { ior: T::one(), max_angle: T::zero() }
+            opacity: Opacity::default(),
+            reflection: Reflection::default(),
+            refraction: Refraction::default()
         }
     }
 
@@ -67,17 +67,17 @@ impl<T> Material<T> where T: num_traits::Float {
         
         success = success && self.color.validate();
 
-        if  !util::is_in_range(self.opacity.center, T::zero(), T::one()) ||
-            !util::is_in_range(self.opacity.edges, T::zero(), T::one()) {
+        if  !util::is_in_range(self.opacity.center, 0.0, 1.0) ||
+            !util::is_in_range(self.opacity.edges, 0.0, 1.0) {
             println!("Warning: Opacity out of usual range 0-1. This can be desired, but might look really weird.");
         }
 
-        if !util::is_in_range(self.opacity.power, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.opacity.power, 0.0, std::f64::INFINITY) {
             println!("Error: Opacity edge effect power must be 0 or positive");
             success = false;
         }
 
-        if !util::is_in_range(self.reflection.power, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.reflection.power, 0.0, std::f64::INFINITY) {
             println!("Error: Reflectivity edge effect power must be 0 or positive");
             success = false;
         }
@@ -86,26 +86,56 @@ impl<T> Material<T> where T: num_traits::Float {
     }
 }
 
-impl<T> OpacityParams<T> {
+impl Opacity {
 
-    pub fn new(center: T, edges: T, power: T) -> OpacityParams<T> {
-        OpacityParams { center, edges, power }
+    pub fn new(center: f64, edges: f64, power: f64) -> Opacity {
+        Opacity { center, edges, power }
     }
-
 }
 
-impl<T> ReflectionParams<T> {
+impl Default for Opacity {
 
-    pub fn new(center: T, edges: T, power: T, max_angle: T) -> ReflectionParams<T> {
-        ReflectionParams { center, edges, power, max_angle }
+    fn default() -> Self {
+        Opacity { 
+            center: 1.0,
+            edges: 1.0,
+            power: 1.0
+         }
     }
-
 }
 
-impl<T> RefractionParams<T> {
+impl Reflection {
 
-    pub fn new(ior: T, max_angle: T) -> RefractionParams<T> {
-        RefractionParams { ior, max_angle }
+    pub fn new(center: f64, edges: f64, power: f64, max_angle: f64) -> Reflection {
+        Reflection { center, edges, power, max_angle }
     }
+}
 
+impl Default for Reflection {
+
+    fn default() -> Self {
+        Reflection {
+            center: 0.0,
+            edges: 0.0,
+            power: 1.0,
+            max_angle: 0.0
+        }
+    }
+}
+
+impl Refraction {
+
+    pub fn new(ior: f64, max_angle: f64) -> Refraction {
+        Refraction { ior, max_angle }
+    }
+}
+
+impl Default for Refraction {
+
+    fn default() -> Self {
+        Refraction {
+            ior: 1.33,
+            max_angle: 0.0
+        }
+    }
 }

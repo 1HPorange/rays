@@ -1,4 +1,3 @@
-extern crate num_traits;
 extern crate rand;
 extern crate rayon;
 extern crate lodepng;
@@ -11,7 +10,7 @@ mod output;
 mod post_processing;
 mod raytracing;
 mod scene;
-mod vec3;
+mod vec;
 mod render_params;
 mod ray_target;
 mod util;

@@ -1,24 +1,24 @@
 use crate::util;
 
-pub struct RenderParams<T> {
-    pub quality: QualityParameters<T>,
-    pub dof: DoFParameters<T>,
+pub struct RenderParams {
+    pub quality: QualityParameters,
+    pub dof: DoFParameters,
     pub max_samples: MaxSamples,
-    pub ao: AoParameters<T>
+    pub ao: AoParameters
 }
 
-impl<T> Default for RenderParams<T> where T: num_traits::Float {
+impl Default for RenderParams {
 
     fn default() -> Self {
 
         RenderParams {
             quality: QualityParameters {
-                min_intensity: T::from(0.03).unwrap(),
+                min_intensity: 0.03,
                 max_bounces: std::u32::MAX,
-                bias: T::from(0.01).unwrap()
+                bias: 0.01
             },
             dof: DoFParameters {
-                max_angle: T::from(0.1).unwrap(),
+                max_angle: 0.1,
                 samples: 10
             },
             max_samples: MaxSamples {
@@ -26,8 +26,8 @@ impl<T> Default for RenderParams<T> where T: num_traits::Float {
                 refraction: 1
             },
             ao: AoParameters {
-                strength: T::from(0.8).unwrap(),
-                distance: T::from(2.0).unwrap(),
+                strength: 0.8,
+                distance: 2.0,
                 samples: 3
             }
         }
@@ -36,7 +36,7 @@ impl<T> Default for RenderParams<T> where T: num_traits::Float {
 
 }
 
-impl<T> RenderParams<T> where T: num_traits::Float {
+impl RenderParams {
 
     pub fn validate(&self) -> bool {
 
@@ -44,7 +44,7 @@ impl<T> RenderParams<T> where T: num_traits::Float {
 
         // Quality settings
 
-        if !util::is_in_range(self.quality.min_intensity, T::zero(), T::one()) {
+        if !util::is_in_range(self.quality.min_intensity, 0.0, 1.0) {
             println!("Error: Minimum intensity needs to be within 0-1 range");
             success = false;
         }
@@ -57,19 +57,19 @@ impl<T> RenderParams<T> where T: num_traits::Float {
             println!("Warning: Refraction won't work properly with less than 2 max_bounces");
         }
 
-        if !util::is_in_range(self.quality.bias, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.quality.bias, 0.0, std::f64::INFINITY) {
             println!("Error: Float correction bias must be 0 or positive");
             success = false;
         }
 
         // DoF
 
-        if !util::is_in_range(self.dof.max_angle, T::zero(), T::from(360.0).unwrap()) {
+        if !util::is_in_range(self.dof.max_angle, 0.0, 360.0) {
             println!("Error: dof.max_angle needs to be between 0 and 360 degrees");
             success = false;
         }
 
-        if !self.dof.max_angle.is_zero() && self.dof.samples == 0 {
+        if self.dof.max_angle != 0.0 && self.dof.samples == 0 {
             println!("Warning: Image will render black because of zero DoF samples, but non-zero DoF max angle.")
         }
 
@@ -85,19 +85,19 @@ impl<T> RenderParams<T> where T: num_traits::Float {
 
         // Ao
 
-        if !util::is_in_range(self.ao.strength, T::zero(), T::one()) {
+        if !util::is_in_range(self.ao.strength, 0.0, 1.0) {
             println!("Error: AO strength must be in range 0-1");
             success = false;
         }
 
-        if !util::is_in_range(self.ao.distance, T::zero(), T::infinity()) {
+        if !util::is_in_range(self.ao.distance, 0.0, std::f64::INFINITY) {
             println!("Error: AO distance must be 0 or positive");
             success = false;
         }
 
-        if self.ao.strength > T::zero() {
+        if self.ao.strength > 0.0 {
 
-            if self.ao.distance.is_zero() {
+            if self.ao.distance == 0.0 {
                 println!("Warning: AO will not work if distance is 0");
             }
 
@@ -113,13 +113,13 @@ impl<T> RenderParams<T> where T: num_traits::Float {
 
 // Support structs
 
-pub struct QualityParameters<T> {
+pub struct QualityParameters {
 
     /// Range: 0-1
     /// A ray is not allowed to spawn more rays if its total intensity falls below
     /// this limit. Setting this value often leads to prettier results than setting
     /// max_bounces directly
-    pub min_intensity: T,
+    pub min_intensity: f64,
 
     /// How often the raytracing function is allowed to recurse. If set to 0, no
     /// reflective and refractive effects will be visible at all.
@@ -129,7 +129,7 @@ pub struct QualityParameters<T> {
     /// Floating point errors can cause visual artifacts in reflections and refraction.
     /// This bias introduces slight inaccuracies with these phenomena, but removes the
     /// artifacts. Basically: Keep lowering this until you see artifacts
-    pub bias: T
+    pub bias: f64
 }
 
 pub struct MaxSamples {
@@ -141,13 +141,13 @@ pub struct MaxSamples {
     pub refraction: u32
 }
 
-pub struct DoFParameters<T> {
+pub struct DoFParameters {
 
     /// Sensible Range: Low single digit degrees
     /// Unit: Degrees
     /// Maximum angle deviation to the direction that an initial camera ray can get.
     /// If set to zero, dof.samples is ignored and a single ray is sent out.
-    pub max_angle: T,
+    pub max_angle: f64,
 
     /// Number of samples that each pixel in the final image consists of. This setting
     /// is ignored (and treated as 1) when max_angle is set to 0
@@ -155,15 +155,15 @@ pub struct DoFParameters<T> {
 
 }
 
-pub struct AoParameters<T> {
+pub struct AoParameters {
 
     /// Range: 0-1
     /// How black the AO shadows are
-    pub strength: T,
+    pub strength: f64,
 
     /// Range: Positive World units
     /// Fallof range of AO shadows
-    pub distance: T,
+    pub distance: f64,
 
     /// How many sample rays are sent out to estimate AO
     pub samples: u32

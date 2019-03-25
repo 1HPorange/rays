@@ -65,7 +65,7 @@ impl RenderTarget {
     pub fn save_as_png<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
 
         // Convert our float colour to a byte color format
-        fn c(x: f32) -> u8 {
+        fn c(x: f64) -> u8 {
             (x * 255.0) as u8
         }
 

@@ -12,22 +12,22 @@ pub enum SamplingMethod {
 }
 
 #[derive(Clone)]
-pub struct TextureUvMapper<T> {
-    base_mat: Material<T>,
+pub struct TextureUvMapper {
+    base_mat: Material,
     pixels: Vec<RGBColor>,
     tex_width: usize,
     tex_height: usize,
     sampling_method: SamplingMethod
 }
 
-impl <T> TextureUvMapper<T> {
+impl TextureUvMapper {
 
-    pub fn from_png_24<P: AsRef<Path>>(filepath: P, base_mat: Material<T>, sampling_method: SamplingMethod) -> Result<TextureUvMapper<T>, io::Error> {
+    pub fn from_png_24<P: AsRef<Path>>(filepath: P, base_mat: Material, sampling_method: SamplingMethod) -> Result<TextureUvMapper, io::Error> {
 
         let decoded = decode24_file(filepath).map_err(|e| io::Error::new(io::ErrorKind::Other, e.as_str()))?;
 
         let pixels = decoded.buffer.iter()
-            .map(|pix| RGBColor::new(pix.r as f32 / 255.0, pix.g as f32 / 255.0, pix.b as f32 / 255.0))
+            .map(|pix| RGBColor::new(pix.r as f64 / 255.0, pix.g as f64 / 255.0, pix.b as f64 / 255.0))
             .collect::<Vec<_>>();
 
         assert!(decoded.width > 0 && decoded.height > 0);
@@ -42,18 +42,18 @@ impl <T> TextureUvMapper<T> {
     }
 }
 
-impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + Sync {
+impl UvMapper for TextureUvMapper {
 
-    fn get_material_at(&self, rch: &GeometryHitInfo<T>) -> Material<T> {
+    fn get_material_at(&self, rch: &GeometryHitInfo) -> Material {
 
-        let w = rch.uv.0 * T::from(self.tex_width - 1).unwrap();
-        let h = (T::one() - rch.uv.1) * T::from(self.tex_height - 1).unwrap();
+        let w = rch.uv.u * (self.tex_width - 1) as f64;
+        let h = (1.0 - rch.uv.v) * (self.tex_height - 1) as f64;
 
         let color = match self.sampling_method {
 
             SamplingMethod::POINT => {
-                let x: usize = num_traits::NumCast::from(w.round()).unwrap();
-                let y: usize = num_traits::NumCast::from(h.round()).unwrap();
+                let x = w.round() as usize;
+                let y = h.round() as usize;
 
                 self.pixels[x + self.tex_width * y]
             },
@@ -61,10 +61,10 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
             SamplingMethod::BILINEAR => {
 
                 // Get the four pixel coordinates needed for bilinear sampling
-                let x_left: usize = num_traits::NumCast::from(w.floor()).unwrap();
+                let x_left = w.floor() as usize;
                 let x_right = x_left + 1;
 
-                let y_top: usize = num_traits::NumCast::from(h.floor()).unwrap();
+                let y_top = h.floor() as usize;
                 let y_bottom = y_top + 1;
 
                 // The four colors we need to interpolate
@@ -78,11 +78,11 @@ impl<T> UvMapper<T> for TextureUvMapper<T> where T: num_traits::Float + Send + S
                 let tv = h.fract();
 
                 // Interpolate horizontally
-                let ct = tl * (T::one() - th) + tr * th;
-                let cb = bl * (T::one() - th) + br * th;
+                let ct = tl * (1.0 - th) + tr * th;
+                let cb = bl * (1.0 - th) + br * th;
 
                 // Interpolate vertically
-                ct * (T::one() - tv) + cb * tv
+                ct * (1.0 - tv) + cb * tv
             }
 
         };

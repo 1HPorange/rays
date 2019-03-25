@@ -1,16 +1,16 @@
 use crate::raytracing::*;
-use crate::vec3::*;
+use crate::vec::*;
 
-pub trait RayTarget<T> {
+pub trait RayTarget {
 
-    fn test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>>;
+    fn test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo>;
 
 }
 
-pub struct GeometryHitInfo<T> {
+pub struct GeometryHitInfo {
 
-    pub position: Vec3<T>,
-    pub normal: Vec3Norm<T>,
-    pub uv: Vec2<T>
+    pub position: Vec3,
+    pub normal: Vec3Norm,
+    pub uv: Vec2
 
 }

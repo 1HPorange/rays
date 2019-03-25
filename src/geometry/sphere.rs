@@ -1,23 +1,23 @@
-use crate::vec3::*;
+use crate::vec::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
 use crate::ray_target::*;
 
-pub struct Sphere<T> {
+pub struct Sphere {
 
-    center: Vec3<T>,
-    radius: T,
-    uv_mapper: Box<UvMapper<T>>,
+    center: Vec3,
+    radius: f64,
+    uv_mapper: Box<UvMapper>,
 
-    up: Vec3Norm<T>,
-    right: Vec3Norm<T>
+    up: Vec3Norm,
+    right: Vec3Norm
 }
 
-impl<T> Sphere<T> where T: num_traits::Float {
+impl Sphere {
 
-    pub fn new<U: 'static + UvMapper<T>>(center: Vec3<T>, radius: T, uv_mapper: U, up: Vec3Norm<T>, right: Vec3Norm<T>) -> Sphere<T> {
+    pub fn new<U: 'static + UvMapper>(center: Vec3, radius: f64, uv_mapper: U, up: Vec3Norm, right: Vec3Norm) -> Sphere {
 
-        assert!(up.dot(right) < T::epsilon());
+        assert!(up.dot(right) < std::f64::EPSILON);
 
         Sphere {
             center,
@@ -28,9 +28,9 @@ impl<T> Sphere<T> where T: num_traits::Float {
         }
     }
 
-    pub fn with_random_right<U: 'static + UvMapper<T>>(center: Vec3<T>, radius: T, uv_mapper: U, up: Vec3Norm<T>) -> Sphere<T> {
+    pub fn with_random_right<U: 'static + UvMapper>(center: Vec3, radius: f64, uv_mapper: U, up: Vec3Norm) -> Sphere {
 
-        let right = up.get_random_90_deg_vector().normalize();
+        let right = up.get_random_90_deg_vector().normalized();
 
         Sphere {
             center,
@@ -42,10 +42,9 @@ impl<T> Sphere<T> where T: num_traits::Float {
     }
 }
 
-impl<T> RayTarget<T> for Sphere<T> where 
-    T: num_traits::Float + num_traits::FloatConst, Vec3<T>: Vec3View<T> {
+impl RayTarget for Sphere where {
 
-    fn test_intersection(&self, ray: &Ray<T>) -> Option<GeometryHitInfo<T>> {
+    fn test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo> {
         
         // Squared radius
         let rad_sqr = self.radius * self.radius;
@@ -59,7 +58,7 @@ impl<T> RayTarget<T> for Sphere<T> where
         // Distance from ray origin to sphere center projected onto ray direction
         let orig_to_midpoint_len = orig_to_center.dot(ray.direction);
         
-        let ray_starts_behind_center = orig_to_midpoint_len < T::zero();
+        let ray_starts_behind_center = orig_to_midpoint_len < 0.0;
 
         if !ray_starts_inside && ray_starts_behind_center {
 
@@ -85,30 +84,30 @@ impl<T> RayTarget<T> for Sphere<T> where
             ray.origin + ray.direction * (orig_to_midpoint_len - midpoint_to_surface)
         };
 
-        let normal = ((hitpoint - self.center) / self.radius).into_normalized();
+        let normal = ((hitpoint - self.center) / self.radius).into_normalized_unsafe();
 
         let uv_x = normal
-            .project_onto_plane_from_same_origin(self.up)
-            .angle_to_planar(self.right, self.up, false)
-            / T::from(360.0).unwrap();
+            .project_onto_plane_through_origin(self.up)
+            .angle_to_on_plane(self.right, self.up, false)
+            / 360.0;
 
-        let uv_y = T::one() - normal
-            .project_onto_plane_from_same_origin(self.right)
-            .angle_to_planar(self.up, self.right, true)
+        let uv_y = 1.0 - normal
+            .project_onto_plane_through_origin(self.right)
+            .angle_to_on_plane(self.up, self.right, true)
             .abs()
-            / T::from(180.0).unwrap();
+            / 180.0;
 
         Option::Some(GeometryHitInfo {
             position: hitpoint,
             normal,
-            uv: Vec2(uv_x, uv_y) // TODO: Implement. Also add an upAxis field to the sphere so the uvs can rotate
+            uv: Vec2::new(uv_x, uv_y)
         })
     }
 }
 
-impl<T> HasUvMapper<T> for Sphere<T> {
+impl HasUvMapper for Sphere {
 
-    fn get_uv_mapper(&self) -> &Box<UvMapper<T>> {
+    fn get_uv_mapper(&self) -> &Box<UvMapper> {
         &self.uv_mapper
     }
 

@@ -5,7 +5,6 @@ authors = ["Markus Webel <m@rkus.online>"]
 edition = "2018"
 
 [dependencies]
-num-traits = "0.2.6"
 rand = "0.6.5"
 rayon = "1.0.3"
 lodepng = "2.4.2"
