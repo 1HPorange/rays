@@ -47,27 +47,27 @@ path = "D:/Downloads/skysphere3.png"
 
 [[obj-sphere]]
 uv-mapper = "glass"
-center = [-8.0, 7.0, 20.0]
+origin = [-8.0, 7.0, 20.0]
 radius = 7.0
 
 [[obj-sphere]]
 uv-mapper = "very-reflective"
-center = [8.0, 7.0, 20.0]
+origin = [8.0, 7.0, 20.0]
 radius = 7.0
 
 [[obj-sphere]]
 uv-mapper = "marble-tex"
-center = [-12.0, 4.0, 7.5]
+origin = [-12.0, 4.0, 7.5]
 radius = 4.0
 
 [[obj-sphere]]
 uv-mapper = "colored-diffuse"
-center = [0.0, 4.5, 5.0]
+origin = [0.0, 4.5, 5.0]
 radius = 4.5
 
 [[obj-sphere]]
 uv-mapper = "refract-blurry"
-center = [12.0, 4.0, 7.5]
+origin = [12.0, 4.0, 7.5]
 radius = 4.0
 
 [[obj-sphere]]
@@ -76,6 +76,7 @@ radius = 1000.0
 
 [[obj-infinite-plane]]
 uv-mapper = "floor-tex"
+uv-scale = 0.1
 
 [[camera]]
 position = [0.0, 15.0, -10.0]

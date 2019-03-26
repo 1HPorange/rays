@@ -14,16 +14,20 @@ struct NamedMaterial {
     material: Material
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct NamedCamera {
+
     name: String,
     
     #[serde(flatten)]
     camera: Camera
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct NamedRenderParams {
+
     name: String,
 
     #[serde(flatten)]
@@ -40,46 +44,49 @@ struct UvmCheckerboardInit {
 #[derive(Deserialize)]
 struct UvmTextureInit {
     name: String,
-    base_mat: String,
+
+    #[serde(default)]
+    base: String,
+
     path: String,
 
     #[serde(default)]
     sampling: SamplingMethod
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct SphereInit {
 
     #[serde(rename = "uv-mapper")]
     uv_mapper: String,
 
-    #[serde(default)]
     origin: Vec3,
 
     #[serde(default = "f64_one")]
     radius: f64,
 
-    #[serde(default)]
     rotation: Vec3
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct InfinitePlaneInit {
 
     #[serde(rename = "uv-mapper")]
     uv_mapper: String,
 
-    #[serde(default)]
     origin: Vec3,
 
-    #[serde(default)]
     rotation: Vec3,
 
     #[serde(default = "f64_one")]
+    #[serde(rename = "uv-scale")]
     uv_scale: f64
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
+#[serde(default)]
 struct RawConfig {
 
     #[serde(rename = "material")]
@@ -113,9 +120,9 @@ fn f64_one() -> f64 {
 // Public stuff
 
 pub struct Config {
-    scene: Scene,
-    camera_config: CameraConfig,
-    render_params_config: RenderParamsConfig
+    pub scene: Scene,
+    pub camera_config: CameraConfig,
+    pub render_params_config: RenderParamsConfig
 }
 
 pub enum CameraConfig {
@@ -175,35 +182,31 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     // Let's start with all the spheres
     for init in config.spheres {
 
-        let uvm = uv_mapper_map.get(&init.uv_mapper[..])
-            .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
+        if init.uv_mapper.is_empty() {
+            let uvm = Arc::new(StaticUvMapper(Material::default()));
 
-        let uvm = Arc::clone(uvm);
+            add_sphere_to_scene(&mut scene, uvm, &init);
+        } else {
+            let uvm = uv_mapper_map.get(&init.uv_mapper[..])
+                .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
 
-        let sphere = Sphere::with_rotation(
-            init.origin, 
-            init.radius, 
-            init.rotation, 
-            uvm);
-
-            scene.add(sphere);
+            add_sphere_to_scene(&mut scene, Arc::clone(uvm), &init);
+        };
     }
 
     // And now let's do the infinite planes
     for init in config.infinite_planes {
 
-        let uvm = uv_mapper_map.get(&init.uv_mapper[..])
-            .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
+        if init.uv_mapper.is_empty() {
+            let uvm = Arc::new(StaticUvMapper(Material::default()));
 
-        let uvm = Arc::clone(uvm);
+            add_infinite_plane_to_scene(&mut scene, uvm, &init);
+        } else {
+            let uvm = uv_mapper_map.get(&init.uv_mapper[..])
+                .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
 
-        let infinite_plane = InifinitePlane::with_rotation(
-            init.origin, 
-            init.rotation, 
-            uvm, 
-            init.uv_scale);
-
-        scene.add(infinite_plane);
+            add_infinite_plane_to_scene(&mut scene, Arc::clone(uvm), &init);
+        };
     }
 
     // Now we handle the cameras
@@ -253,6 +256,28 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     })
 }
 
+fn add_sphere_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &SphereInit) {
+
+    let sphere = Sphere::with_rotation(
+        init.origin, 
+        init.radius, 
+        init.rotation, 
+        uv_mapper);
+
+    scene.add(sphere);
+}
+
+fn add_infinite_plane_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &InfinitePlaneInit) {
+
+    let infinite_plane = InifinitePlane::with_rotation(
+        init.origin, 
+        init.rotation, 
+        uv_mapper, 
+        init.uv_scale);
+
+    scene.add(infinite_plane);
+}
+
 trait IntoUvMapper {
     fn name(&self) -> &str;
     fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
@@ -295,9 +320,13 @@ impl IntoUvMapper for UvmTextureInit {
    fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
         -> Result<Arc<dyn UvMapper>, Box<std::error::Error>> {
         
-        let base_mat = mat_map.get(&self.base_mat[..])
-            .ok_or("Material for key \"base_mat\" not found")?
-            .clone();
+        let base_mat = if self.base.is_empty() {
+            Material::default()
+        } else {
+            mat_map.get(&self.base[..])
+                .ok_or("Material for key \"base_mat\" not found")?
+                .clone()
+        };
 
         let uvm = TextureUvMapper::from_png_24(&self.path, base_mat, self.sampling)?;
 
