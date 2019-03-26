@@ -1,39 +1,13 @@
 use crate::util;
+use serde::Deserialize;
 
+#[derive(Copy, Clone, Debug, Default, Deserialize)]
+#[serde(default)]
 pub struct RenderParams {
     pub quality: QualityParameters,
     pub dof: DoFParameters,
     pub max_samples: MaxSamples,
     pub ao: AoParameters
-}
-
-impl Default for RenderParams {
-
-    fn default() -> Self {
-
-        RenderParams {
-            quality: QualityParameters {
-                min_intensity: 0.03,
-                max_bounces: std::u32::MAX,
-                bias: 0.0001
-            },
-            dof: DoFParameters {
-                max_angle: 0.1,
-                samples: 10
-            },
-            max_samples: MaxSamples {
-                reflection: 6,
-                refraction: 1
-            },
-            ao: AoParameters {
-                strength: 0.8,
-                distance: 2.0,
-                samples: 3
-            }
-        }
-
-    }
-
 }
 
 impl RenderParams {
@@ -113,6 +87,8 @@ impl RenderParams {
 
 // Support structs
 
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(default)]
 pub struct QualityParameters {
 
     /// Range: 0-1
@@ -132,6 +108,18 @@ pub struct QualityParameters {
     pub bias: f64
 }
 
+impl Default for QualityParameters {
+    fn default() -> Self {
+        QualityParameters {
+            min_intensity: 0.03,
+            max_bounces: std::u32::MAX,
+            bias: 0.0001
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(default)]
 pub struct MaxSamples {
  
     /// Maximum number of rays that might be sent out when a reflective surface is hit
@@ -141,6 +129,17 @@ pub struct MaxSamples {
     pub refraction: u32
 }
 
+impl Default for MaxSamples {
+    fn default() -> Self {
+        MaxSamples {
+            reflection: 6,
+            refraction: 1
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(default)]
 pub struct DoFParameters {
 
     /// Sensible Range: Low single digit degrees
@@ -155,6 +154,17 @@ pub struct DoFParameters {
 
 }
 
+impl Default for DoFParameters {
+    fn default() -> Self {
+        DoFParameters {
+            max_angle: 0.1,
+            samples: 10
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Deserialize)]
+#[serde(default)]
 pub struct AoParameters {
 
     /// Range: 0-1
@@ -168,4 +178,14 @@ pub struct AoParameters {
     /// How many sample rays are sent out to estimate AO
     pub samples: u32
 
+}
+
+impl Default for AoParameters {
+    fn default() -> Self {
+        AoParameters {
+            strength: 0.8,
+            distance: 2.0,
+            samples: 3
+        }
+    }
 }

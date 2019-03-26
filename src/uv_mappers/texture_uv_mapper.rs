@@ -1,14 +1,19 @@
 use std::io;
 use std::path::Path;
-
+use serde::Deserialize;
 use lodepng::*;
-
 use crate::uv_mappers::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Deserialize)]
 pub enum SamplingMethod {
     POINT,
     BILINEAR
+}
+
+impl Default for SamplingMethod {
+    fn default() -> Self {
+        SamplingMethod::BILINEAR
+    }
 }
 
 #[derive(Clone)]

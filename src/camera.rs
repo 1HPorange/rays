@@ -1,16 +1,30 @@
 use super::vec::*;
 use super::util;
+use serde::Deserialize;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(default)]
 pub struct Camera {
 
+    #[serde(default = "default_position")]
     pub position: Vec3,
+
     pub rotation: Vec3,
     pub viewport: ViewPort,
+    
+    #[serde(default = "default_fov")]
     pub fov_h: f64
 }
 
-#[derive(Debug, Copy, Clone)]
+fn default_position() -> Vec3 {
+    Vec3::new(0.0, 0.0, -10.0)
+}
+
+fn default_fov() -> f64 {
+    60.0
+}
+
+#[derive(Debug, Copy, Clone, Deserialize)]
 pub struct ViewPort {
     pub width: f64,
     pub height: f64
@@ -22,6 +36,15 @@ impl ViewPort {
         self.width / self.height
     }
 
+}
+
+impl Default for ViewPort {
+    fn default() -> ViewPort {
+        ViewPort {
+            width: 16.0,
+            height: 9.0
+        }
+    }
 }
 
 impl Camera {
@@ -64,7 +87,7 @@ impl Default for Camera {
         Camera {
             position: Vec3::new(0.0, 0.0, -10.0),
             rotation: Vec3::ZERO,
-            viewport: ViewPort { width: 16.0, height: 9.0 },
+            viewport: ViewPort::default(),
             fov_h: 60.0
         }
     }

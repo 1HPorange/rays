@@ -4,19 +4,12 @@ use serde::{Deserialize, Deserializer};
 
 // TODO: Supply useful default values for all these things
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct Material {
-
-    #[serde(default)]
     pub color: RGBColor,
-
-    #[serde(default)]
     pub opacity: Opacity,
-
-    #[serde(default)]
     pub reflection: Reflection,
-
-    #[serde(default)]
     pub refraction: Refraction,
 }
 
