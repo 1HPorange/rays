@@ -1,4 +1,5 @@
 use crate::util;
+use crate::color::RGBColor;
 use serde::Deserialize;
 
 #[derive(Copy, Clone, Debug, Default, Deserialize)]
@@ -7,7 +8,17 @@ pub struct RenderParams {
     pub quality: QualityParameters,
     pub dof: DoFParameters,
     pub max_samples: MaxSamples,
-    pub ao: AoParameters
+    pub ao: AoParameters,
+
+    /// This is the color returned when a ray doesn't hit anything
+    /// If you want a more complex skybox, add it manually as an object
+    #[serde(default = "const_black")]
+    // we make the default sky black to contrast the default object color: white
+    pub sky_color: RGBColor
+}
+
+fn const_black() -> RGBColor {
+    RGBColor::BLACK
 }
 
 impl RenderParams {
@@ -79,6 +90,8 @@ impl RenderParams {
                 println!("Warning: AO will not work if samples are 0");
             }
         }
+
+        success = success && self.sky_color.validate();
 
         success
     }

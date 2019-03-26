@@ -75,7 +75,7 @@ impl Camera {
         }
 
         if !util::is_in_range(self.fov_h, 0.0, 180.0) {
-            println!("Warning: FoV outside of usual range. This can be intential, but will look pretty weird.");
+            println!("Warning: FoV outside of usual range. This can be intentional, but will look pretty weird.");
         }
 
         success

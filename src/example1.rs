@@ -92,7 +92,7 @@ pub fn create_scene() -> Scene {
 
     // Scene
 
-    let mut scene = Scene::new(RGBColor::WHITE);
+    let mut scene = Scene::new();
 
     scene.add(floor);
     scene.add(sky_sphere);

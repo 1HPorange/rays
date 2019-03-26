@@ -202,7 +202,7 @@ fn raytrace_recursive<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R,
     } else {
         
         // Ray didn't hit anything
-        params.scene.sky_color * intensity
+        params.render_params.sky_color * intensity
 
     }
 }

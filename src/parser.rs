@@ -15,6 +15,22 @@ struct NamedMaterial {
 }
 
 #[derive(Deserialize)]
+struct NamedCamera {
+    name: String,
+    
+    #[serde(flatten)]
+    camera: Camera
+}
+
+#[derive(Deserialize)]
+struct NamedRenderParams {
+    name: String,
+
+    #[serde(flatten)]
+    render_params: RenderParams
+}
+
+#[derive(Deserialize)]
 struct UvmCheckerboardInit {
     name: String,
     even: String,
@@ -82,16 +98,10 @@ struct RawConfig {
     infinite_planes: Vec<InfinitePlaneInit>,
 
     #[serde(rename = "camera")]
-    cameras: Vec<Camera>,
+    cameras: Vec<NamedCamera>,
 
     #[serde(rename = "render-params")]
-    render_params: Vec<RenderParams>
-}
-
-pub struct Config {
-    scene: Scene,
-    cameras: HashMap<String, Camera>,
-    render_params: HashMap<String, RenderParams>
+    render_params: Vec<NamedRenderParams>
 }
 
 // Useful defaults
@@ -100,7 +110,26 @@ fn f64_one() -> f64 {
     1.0
 }
 
-pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<(), Box<std::error::Error>> {
+// Public stuff
+
+pub struct Config {
+    scene: Scene,
+    camera_config: CameraConfig,
+    render_params_config: RenderParamsConfig
+}
+
+pub enum CameraConfig {
+    Single(Camera),
+    Multiple(HashMap<String, Camera>)
+}
+
+pub enum RenderParamsConfig {
+    Single(RenderParams),
+    Multiple(HashMap<String, RenderParams>)
+}
+
+// TODO: Get rid of code duplication all over this module
+pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::error::Error>> {
 
     let content = std::fs::read_to_string(path)?;
 
@@ -110,7 +139,6 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<(), Box<std::error::E
 
     // Check if all materials and uv mapeprs combined have unique keys
 
-    // TODO: Get rid of code duplication
     let all_unique = config.materials.iter()
         .all(|x| into_uvm_map.insert(x.name(), x).is_none()) &&
         config.uvm_checkerboards.iter()
@@ -129,7 +157,7 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<(), Box<std::error::E
         mat_map.insert(mat.name(), mat.material);
     }
 
-    // generate all uv mappers out material and uv mapper descriptions
+    // generate all uv mappers out of material and uv mapper descriptions
     // and put them into a map
     let mut uv_mapper_map = HashMap::new();
 
@@ -141,11 +169,88 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<(), Box<std::error::E
         uv_mapper_map.insert(key, uvm);
     }
 
+    // Construct all geometry and associate it with uv mappers
+    let mut scene = Scene::new();
 
+    // Let's start with all the spheres
+    for init in config.spheres {
 
-    std::process::exit(0);
+        let uvm = uv_mapper_map.get(&init.uv_mapper[..])
+            .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
 
-    Ok(())
+        let uvm = Arc::clone(uvm);
+
+        let sphere = Sphere::with_rotation(
+            init.origin, 
+            init.radius, 
+            init.rotation, 
+            uvm);
+
+            scene.add(sphere);
+    }
+
+    // And now let's do the infinite planes
+    for init in config.infinite_planes {
+
+        let uvm = uv_mapper_map.get(&init.uv_mapper[..])
+            .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
+
+        let uvm = Arc::clone(uvm);
+
+        let infinite_plane = InifinitePlane::with_rotation(
+            init.origin, 
+            init.rotation, 
+            uvm, 
+            init.uv_scale);
+
+        scene.add(infinite_plane);
+    }
+
+    // Now we handle the cameras
+
+    let camera_config = if config.cameras.is_empty() {
+        CameraConfig::Single(Camera::default())
+    } else if config.cameras.len() == 1 {
+        CameraConfig::Single(config.cameras[0].camera)
+    } else {
+        // If we have multiple cameras, we need to make sure that
+        // their keys are unique
+        let mut cam_map = HashMap::new();
+
+        for named_cam in config.cameras {
+            if cam_map.insert(named_cam.name, named_cam.camera).is_some() {
+                return Err("Multiple cameras must have unique name keys".into());
+            }
+        }
+
+        CameraConfig::Multiple(cam_map)
+    };
+
+    // And finally the render parameters
+
+    let render_params_config = if config.render_params.is_empty() {
+        RenderParamsConfig::Single(RenderParams::default())
+    } else if config.render_params.len() == 1 {
+        RenderParamsConfig::Single(config.render_params[0].render_params)
+    } else {
+        // Again, we need to make sure that all RenderParams
+        // have unique keys
+        let mut rp_map = HashMap::new();
+
+        for named_rp in config.render_params {
+            if rp_map.insert(named_rp.name, named_rp.render_params).is_some() {
+                return Err("Multiple render-params structs must have unique name keys".into());
+            }
+        }
+
+        RenderParamsConfig::Multiple(rp_map)
+    };
+
+    Ok(Config {
+        scene,
+        camera_config,
+        render_params_config
+    })
 }
 
 trait IntoUvMapper {

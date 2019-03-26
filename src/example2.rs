@@ -58,7 +58,7 @@ pub fn create_scene() -> Scene  {
 
     // Scene
 
-    let mut scene = Scene::new(RGBColor::WHITE);
+    let mut scene = Scene::new();
 
     scene.add(floor);
     scene.add(ceiling);
@@ -87,6 +87,7 @@ pub fn create_render_parameters() -> RenderParams {
 
     rp.ao.strength = 0.4;
     rp.ao.distance = 5.0;
+    rp.sky_color = RGBColor::WHITE;
 
     rp
 }

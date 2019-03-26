@@ -22,5 +22,5 @@ mod util;
 pub mod uv_mappers;
 pub mod prelude;
 
-pub use parser::parse;
+pub use parser::{Config, parse};
 pub use raytracing::render;
