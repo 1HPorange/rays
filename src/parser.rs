@@ -229,8 +229,9 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
         let mut cam_map = HashMap::new();
 
         for named_cam in config.cameras {
-            if cam_map.insert(named_cam.name, named_cam.camera).is_some() {
-                return Err("Multiple cameras must have unique name keys".into());
+            if  !named_cam.name.is_empty() &&
+                cam_map.insert(named_cam.name, named_cam.camera).is_some() {
+                return Err("Multiple cameras must have unique, non-empty name keys".into());
             }
         }
 
@@ -249,8 +250,9 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
         let mut rp_map = HashMap::new();
 
         for named_rp in config.render_params {
-            if rp_map.insert(named_rp.name, named_rp.render_params).is_some() {
-                return Err("Multiple render-params structs must have unique name keys".into());
+            if  !named_rp.name.is_empty() &&
+                rp_map.insert(named_rp.name, named_rp.render_params).is_some() {
+                return Err("Multiple render-params structs must have unique, non-empty name keys".into());
             }
         }
 
