@@ -11,16 +11,18 @@ pub struct Sphere {
     uv_mapper: Arc<dyn UvMapper>,
 
     up: Vec3Norm,
-    right: Vec3Norm
+    right: Vec3Norm,
+
+    visible_to_camera: bool
 }
 
 impl Sphere {
 
-    pub fn new(origin: Vec3, radius: f64, uv_mapper: Arc<dyn UvMapper>) -> Sphere {
-        Sphere::with_rotation(origin, radius, Vec3::ZERO, uv_mapper)
+    pub fn new(origin: Vec3, radius: f64, uv_mapper: Arc<dyn UvMapper>, visible_to_camera: bool) -> Sphere {
+        Sphere::with_rotation(origin, radius, Vec3::ZERO, uv_mapper, visible_to_camera)
     }
 
-    pub fn with_rotation(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>) -> Sphere {
+    pub fn with_rotation(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, visible_to_camera: bool) -> Sphere {
 
         let up = Vec3Norm::UP.rotate(rotation);
         let right = Vec3Norm::RIGHT.rotate(rotation);
@@ -30,12 +32,17 @@ impl Sphere {
             radius,
             uv_mapper,
             up,
-            right
+            right,
+            visible_to_camera
         }
     }
 }
 
 impl RayTarget for Sphere where {
+
+    fn is_visible_to_camera(&self) -> bool {
+        self.visible_to_camera
+    }
 
     fn test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo> {
         

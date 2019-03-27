@@ -69,10 +69,14 @@ struct SphereInit {
 
     origin: Vec3,
 
-    #[serde(default = "f64_one")]
+    #[serde(default = "const_f64_one")]
     radius: f64,
 
-    rotation: Vec3
+    rotation: Vec3,
+
+    #[serde(rename = "visible-to-camera")]
+    #[serde(default = "const_true")]
+    visible_to_camera: bool
 }
 
 #[derive(Default, Deserialize)]
@@ -87,9 +91,13 @@ struct InfinitePlaneInit {
 
     rotation: Vec3,
 
-    #[serde(default = "f64_one")]
+    #[serde(default = "const_f64_one")]
     #[serde(rename = "uv-scale")]
-    uv_scale: f64
+    uv_scale: f64,
+
+    #[serde(rename = "visible-to-camera")]
+    #[serde(default = "const_true")]
+    visible_to_camera: bool
 }
 
 #[derive(Default, Deserialize)]
@@ -121,8 +129,12 @@ struct RawConfig {
 
 // Useful defaults
 
-fn f64_one() -> f64 {
+fn const_f64_one() -> f64 {
     1.0
+}
+
+fn const_true() -> bool {
+    true
 }
 
 // Public stuff
@@ -272,7 +284,8 @@ fn add_sphere_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &S
         init.origin, 
         init.radius, 
         init.rotation, 
-        uv_mapper);
+        uv_mapper,
+        init.visible_to_camera);
 
     scene.add(sphere);
 }
@@ -283,7 +296,8 @@ fn add_infinite_plane_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, 
         init.origin, 
         init.rotation, 
         uv_mapper, 
-        init.uv_scale);
+        init.uv_scale,
+        init.visible_to_camera);
 
     scene.add(infinite_plane);
 }

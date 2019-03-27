@@ -1,3 +1,6 @@
 /target
 **/*.rs.bk
-output.png
+*.png
+!example1.jpg
+!example2.jpg
+!example3.jpg

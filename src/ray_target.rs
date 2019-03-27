@@ -5,6 +5,7 @@ pub trait RayTarget {
 
     fn test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo>;
 
+    fn is_visible_to_camera(&self) -> bool;
 }
 
 pub struct GeometryHitInfo {

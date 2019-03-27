@@ -59,12 +59,14 @@ Geometry are the physical objects you want to display in your scene, usually inc
 uv-mapper = "pure-white"
 origin = [0.0, 0.0, 0.0]
 radius = 1.0
+visible-to-camera = true # if false, can just be seen through reflection / refraction
 # only important if you care about uv orientation:
 rotation = [0.0, 0.0, 0.0]
 
 [[obj-infinite-plane]]
 uv-mapper = "chessboard"
 origin = [0.0, 0.0, 0.0]
+visible-to-camera = true
 # default orientation is flat on the XZ-plane:
 rotation = [0.0, 0.0, 0.0]
 ```
@@ -116,7 +118,7 @@ Similarly to cameras, you only need to specify a `name` key if you have multiple
 rays [-c "camera-name"] [-p "render-params-name"] [-w 1280] [-h 720] scene.toml ["output.png"]
 ```
 
-If multiple `camera` or `render-param` structs are found, but none are supplied as command-line arguments, then the top-most struct is used to render the scene. If none are found, the default structs are used.
+If multiple `camera` or `render-params` structs are found, but none are supplied as command-line arguments, then the top-most struct is used to render the scene. If none are found, the default structs are used.
 
 ## Examples
 

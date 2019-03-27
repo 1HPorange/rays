@@ -14,6 +14,7 @@ pub struct RenderParams {
     /// This is the color returned when a ray doesn't hit anything
     /// If you want a more complex skybox, add it manually as an object
     #[serde(default = "const_black")]
+    #[serde(rename = "sky-color")]
     // we make the default sky black to contrast the default object color: white
     pub sky_color: RGBColor
 }

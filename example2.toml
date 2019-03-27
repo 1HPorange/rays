@@ -38,12 +38,12 @@ odd = "white"
 
 [[uvm-texture]]
 name = "sky-tex"
-path = "D:/Downloads/skysphere4.png"
+path = "sky.png"
 
 [[uvm-texture]]
 name = "marble-tex"
 base = "marble"
-path = "D:/Downloads/skysphere3.png"
+path = "marble.png"
 
 [[obj-sphere]]
 uv-mapper = "glass"

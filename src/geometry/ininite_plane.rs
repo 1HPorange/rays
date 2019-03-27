@@ -12,10 +12,9 @@ pub struct InifinitePlane {
     right: Vec3Norm,
     uv_mapper: Arc<dyn UvMapper>,
 
-    /// A scale of one goes through one UV cycle per world unit.
-    /// Higher scales squeeze the uv mapping, while lower scales
-    /// stretch it.
     uv_scale: f64,
+
+    visible_to_camera: bool,
 
     /// Calculated from normal and right. Helps with uv calculation
     forwards: Vec3Norm
@@ -23,11 +22,11 @@ pub struct InifinitePlane {
 
 impl InifinitePlane {
 
-    pub fn new(origin: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64) -> InifinitePlane {
-        InifinitePlane::with_rotation(origin, Vec3::ZERO, uv_mapper, uv_scale)
+    pub fn new(origin: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64, visible_to_camera: bool) -> InifinitePlane {
+        InifinitePlane::with_rotation(origin, Vec3::ZERO, uv_mapper, uv_scale, visible_to_camera)
     }
 
-    pub fn with_rotation(origin: Vec3, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64) -> InifinitePlane {
+    pub fn with_rotation(origin: Vec3, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64, visible_to_camera: bool) -> InifinitePlane {
 
         let normal = Vec3Norm::UP.rotate(rotation);
         let right = Vec3Norm::RIGHT.rotate(rotation);
@@ -39,12 +38,17 @@ impl InifinitePlane {
             right,
             uv_mapper,
             uv_scale,
+            visible_to_camera,
             forwards
         }
     }
 }
 
 impl RayTarget for InifinitePlane {
+
+    fn is_visible_to_camera(&self) -> bool {
+        self.visible_to_camera
+    }
 
     fn  test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo> {
 

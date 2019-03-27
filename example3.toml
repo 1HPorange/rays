@@ -1,0 +1,38 @@
+[[material]]
+name = "pearl"
+reflection = { center = 0.1, edges = 0.8, power = 1.0, max_angle = 20.0 }
+
+[[material]]
+name = "red"
+color = [1.0, 0.0, 0.0]
+reflection = { center = 1.0, edges = 1.0, power = 1.0, max_angle = 90.0 }
+opacity = { center = 0.75, edges = 0.75, power = 1.0 }
+
+[[uvm-texture]]
+name = "sky-tex"
+path = "pimp.png"
+
+[[obj-sphere]]
+uv-mapper = "pearl"
+radius = 4.0
+
+[[obj-sphere]]
+uv-mapper = "red"
+origin = [40.0, 0.0, 0.0]
+radius = 20.0
+
+[[obj-sphere]]
+uv-mapper = "red"
+origin = [-40.0, 0.0, 0.0]
+radius = 20.0
+
+[[obj-sphere]]
+uv-mapper = "sky-tex"
+radius = 1000.0
+visible-to-camera = false
+
+[[camera]]
+fov_h = 260
+
+[[render-params]]
+sky-color = [0.831, 0.768, 0.725]

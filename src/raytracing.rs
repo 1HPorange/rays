@@ -95,7 +95,7 @@ pub fn render(scene: &Scene, camera: &Camera, render_target: &mut RenderTarget, 
             // We render just a single ray if DoF is disabled
             let color = if render_params.dof.max_angle == 0.0 {
 
-                let direction = get_initial_randomized_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
+                let direction = get_initial_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
 
                 raytrace_recursive(
                     &raytrace_params,
@@ -111,7 +111,7 @@ pub fn render(scene: &Scene, camera: &Camera, render_target: &mut RenderTarget, 
 
                 for _ in 0..render_params.dof.samples {
 
-                    let direction = get_initial_randomized_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
+                    let direction = get_initial_ray_direction(camera, &mut rng, render_params.dof.max_angle, angle_x, angle_y);
 
                     color += raytrace_recursive(
                         &raytrace_params,
@@ -145,7 +145,7 @@ fn get_initial_ray_origin(camera: &Camera, viewport_x: f64, viewport_y: f64) -> 
     origin
 }
 
-fn get_initial_randomized_ray_direction<R: Rng + ?Sized>(camera: &Camera, rng: &mut R, dof_angle: f64, fov_angle_x: f64, fov_angle_y: f64) -> Vec3Norm {
+fn get_initial_ray_direction<R: Rng + ?Sized>(camera: &Camera, rng: &mut R, dof_angle: f64, fov_angle_x: f64, fov_angle_y: f64) -> Vec3Norm {
 
     let mut direction = Vec3Norm::FORWARD;
 
@@ -173,7 +173,7 @@ fn get_initial_randomized_ray_direction<R: Rng + ?Sized>(camera: &Camera, rng: &
 
 fn raytrace_recursive<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, ray: Ray, bounces: u32, intensity: f64) -> RGBColor {
 
-    let closest_hit = get_closest_hit(params, &ray);
+    let closest_hit = get_closest_hit(params, &ray, bounces);
 
     if let Some((obj, hit)) = closest_hit {
 
@@ -214,7 +214,7 @@ fn apply_ao<R: Rng + ?Sized>(intensity: &mut f64, rng: &mut R, params: &Raytrace
     let directions = gen_sample_ray_cone(rng, 90.0, params.render_params.ao.samples, hit.normal, hit.normal);
 
     let closest = directions.into_iter()
-        .flat_map(|direction| get_closest_hit(params, &Ray { origin, direction }))
+        .flat_map(|direction| get_closest_hit(params, &Ray { origin, direction }, 1))
         // TODO: Investigate this:
         // .filter(|(_, other_hit)| hit.normal.dot(other_hit.normal) > T::zero()) // Only do AO on EXTERNAL reflections
         .min_by(|a,b| hit_dist_comp(origin, &a.1, &b.1));
@@ -229,11 +229,12 @@ fn apply_ao<R: Rng + ?Sized>(intensity: &mut f64, rng: &mut R, params: &Raytrace
     }
 }
 
-fn get_closest_hit<'a>(params: &'a RaytraceParameters, ray: &Ray) -> Option<(&'a Box<SceneObject>, GeometryHitInfo)> {
+fn get_closest_hit<'a>(params: &'a RaytraceParameters, ray: &Ray, bounces: u32) -> Option<(&'a Box<SceneObject>, GeometryHitInfo)> {
 
     let potential_hits = params.scene.objects.iter()
         .map(|obj| (obj, obj.test_intersection(&ray)))
-        .filter(|(_, rch)| rch.is_some())
+        // Filter out the objects that are actually hit AND visible to the camera
+        .filter(|(obj, rch)| rch.is_some() && (bounces > 0 || obj.is_visible_to_camera()) )
         .map(|(obj, rch)| (obj, rch.unwrap()));
 
     potential_hits
