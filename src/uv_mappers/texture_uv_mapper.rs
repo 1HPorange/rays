@@ -5,6 +5,7 @@ use lodepng::*;
 use crate::uv_mappers::*;
 
 #[derive(Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub enum SamplingMethod {
     POINT,
     BILINEAR

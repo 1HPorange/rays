@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 #[derive(Copy, Clone, Debug, Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct RenderParams {
     pub quality: QualityParameters,
     pub dof: DoFParameters,
@@ -102,6 +103,7 @@ impl RenderParams {
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct QualityParameters {
 
     /// Range: 0-1
@@ -133,6 +135,7 @@ impl Default for QualityParameters {
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct MaxSamples {
  
     /// Maximum number of rays that might be sent out when a reflective surface is hit
@@ -153,6 +156,7 @@ impl Default for MaxSamples {
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct DoFParameters {
 
     /// Sensible Range: Low single digit degrees
@@ -178,6 +182,7 @@ impl Default for DoFParameters {
 
 #[derive(Copy, Clone, Debug, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct AoParameters {
 
     /// Range: 0-1

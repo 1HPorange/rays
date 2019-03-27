@@ -7,6 +7,7 @@ use std::io;
 // TODO: This whole module is pretty awful, but I'm not sure what to do about it
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)] 
 struct NamedMaterial {
     name: String,
 
@@ -16,6 +17,7 @@ struct NamedMaterial {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 struct NamedCamera {
 
     name: String,
@@ -26,6 +28,7 @@ struct NamedCamera {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 struct NamedRenderParams {
 
     name: String,
@@ -35,6 +38,7 @@ struct NamedRenderParams {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)] 
 struct UvmCheckerboardInit {
     name: String,
     even: String,
@@ -42,6 +46,7 @@ struct UvmCheckerboardInit {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)] 
 struct UvmTextureInit {
     name: String,
 
@@ -56,6 +61,7 @@ struct UvmTextureInit {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 struct SphereInit {
 
     #[serde(rename = "uv-mapper")]
@@ -71,6 +77,7 @@ struct SphereInit {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 struct InfinitePlaneInit {
 
     #[serde(rename = "uv-mapper")]
@@ -87,6 +94,7 @@ struct InfinitePlaneInit {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 struct RawConfig {
 
     #[serde(rename = "material")]

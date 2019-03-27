@@ -6,6 +6,7 @@ use serde::{Deserialize, Deserializer};
 
 #[derive(Debug, Copy, Clone, Default, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct Material {
     pub color: RGBColor,
     pub opacity: Opacity,
@@ -14,6 +15,7 @@ pub struct Material {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Opacity {
     pub center: f64,
     pub edges: f64,
@@ -21,6 +23,7 @@ pub struct Opacity {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Reflection {
     pub center: f64,
     pub edges: f64,
@@ -29,6 +32,7 @@ pub struct Reflection {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Refraction {
     pub ior: f64,
     pub max_angle: f64,

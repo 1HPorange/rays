@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Copy, Clone, Deserialize)]
 #[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct Camera {
 
     #[serde(default = "default_position")]
@@ -25,6 +26,7 @@ fn default_fov() -> f64 {
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct ViewPort {
     pub width: f64,
     pub height: f64
