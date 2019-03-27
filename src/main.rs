@@ -47,8 +47,8 @@ fn main() {
             .help("Path the the PNG output file"))
         .get_matches();
 
-    let config = rays::parse("example1.toml")
-        .expect("Config contains some errors. Please fix and try again.");
+    let config = rays::parse(cla.value_of(ARG_SCENE).unwrap())
+        .expect("Error parsing config. Please fix and try again.");
 
     let camera = extract_camera(cla.value_of(ARG_CAMERA), config.camera_config);
 
