@@ -206,6 +206,13 @@ impl From<Vec3Norm> for Vec3 {
     }
 }
 
+impl Default for Vec3 {
+
+    fn default() -> Vec3 {
+        Vec3::ZERO
+    }
+}
+
 macro_rules! overlapping_impl {
     ($($t:ty)*) => ($(
 
@@ -362,3 +369,17 @@ macro_rules! overlapping_impl {
 }
 
 overlapping_impl! { Vec3 Vec3Norm }
+
+// Deserialization
+use serde::{Deserialize, Deserializer};
+
+impl<'de> Deserialize<'de> for Vec3 {
+    fn deserialize<D>(deserializer: D) -> Result<Vec3, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let v = <[f64; 3]>::deserialize(deserializer)?;
+
+        Ok(Vec3::new(v[0], v[1], v[2]))
+    }
+}

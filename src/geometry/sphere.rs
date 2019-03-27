@@ -2,12 +2,13 @@ use crate::vec::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
 use crate::ray_target::*;
+use std::sync::Arc;
 
 pub struct Sphere {
 
     origin: Vec3,
     radius: f64,
-    uv_mapper: Box<UvMapper>,
+    uv_mapper: Arc<dyn UvMapper>,
 
     up: Vec3Norm,
     right: Vec3Norm
@@ -15,11 +16,11 @@ pub struct Sphere {
 
 impl Sphere {
 
-    pub fn new<U: 'static + UvMapper>(origin: Vec3, radius: f64, uv_mapper: U) -> Sphere {
+    pub fn new(origin: Vec3, radius: f64, uv_mapper: Arc<dyn UvMapper>) -> Sphere {
         Sphere::with_rotation(origin, radius, Vec3::ZERO, uv_mapper)
     }
 
-    pub fn with_rotation<U: 'static + UvMapper>(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: U) -> Sphere {
+    pub fn with_rotation(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>) -> Sphere {
 
         let up = Vec3Norm::UP.rotate(rotation);
         let right = Vec3Norm::RIGHT.rotate(rotation);
@@ -27,7 +28,7 @@ impl Sphere {
         Sphere {
             origin,
             radius,
-            uv_mapper: Box::new(uv_mapper),
+            uv_mapper,
             up,
             right
         }
@@ -99,7 +100,7 @@ impl RayTarget for Sphere where {
 
 impl HasUvMapper for Sphere {
 
-    fn get_uv_mapper(&self) -> &Box<UvMapper> {
+    fn get_uv_mapper(&self) -> &Arc<dyn UvMapper> {
         &self.uv_mapper
     }
 

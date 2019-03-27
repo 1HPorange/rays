@@ -42,15 +42,18 @@ impl RGBColor {
 impl From<RGBColor> for [u8;3] {
 
     fn from(col: RGBColor)-> [u8;3] {
-
         [
             (col.r * 255.0) as u8,
             (col.g * 255.0) as u8,
             (col.b * 255.0) as u8,
         ]
-
     }
+}
 
+impl Default for RGBColor {
+    fn default() -> Self {
+        RGBColor::WHITE
+    }
 }
 
 impl std::ops::Mul<f64> for RGBColor {
@@ -119,3 +122,17 @@ impl std::ops::AddAssign for RGBColor {
 //     }
 
 // }
+
+// Deserialization
+use serde::{Deserialize, Deserializer};
+
+impl<'de> Deserialize<'de> for RGBColor {
+    fn deserialize<D>(deserializer: D) -> Result<RGBColor, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let v = <[f64; 3]>::deserialize(deserializer)?;
+
+        Ok(RGBColor::new(v[0], v[1], v[2]))
+    }
+}

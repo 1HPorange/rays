@@ -1,24 +1,29 @@
 use crate::color::*;
 use crate::util;
+use serde::{Deserialize, Deserializer};
 
 // TODO: Supply useful default values for all these things
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)] 
 pub struct Material {
-    pub color: RGBColor, // alpha determines how many rays pass through the material and are potentially refracted
+    pub color: RGBColor,
     pub opacity: Opacity,
     pub reflection: Reflection,
     pub refraction: Refraction,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Opacity {
     pub center: f64,
     pub edges: f64,
     pub power: f64
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Reflection {
     pub center: f64,
     pub edges: f64,
@@ -26,7 +31,8 @@ pub struct Reflection {
     pub max_angle: f64
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize)]
+#[serde(deny_unknown_fields)] 
 pub struct Refraction {
     pub ior: f64,
     pub max_angle: f64,

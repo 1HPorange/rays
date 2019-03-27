@@ -1,10 +1,13 @@
 [package]
 name = "rays"
-version = "0.1.0"
-authors = ["Markus Webel <m@rkus.online>"]
+version = "1.0.0"
+authors = ["Markus W. <m@rkus.online>"]
 edition = "2018"
 
 [dependencies]
 rand = "0.6.5"
 rayon = "1.0.3"
 lodepng = "2.4.2"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.5.0"
+clap = "2.32.0"
