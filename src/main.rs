@@ -8,6 +8,8 @@ fn main() {
 
     const ARG_CAMERA: &str = "camera";
     const ARG_RENDERPARAMS: &str = "render-params";
+    const ARG_QUALITY_HINT: &str = "quality-hint";
+    const ARG_QUALITY_OVERRIDE: &str = "quality-override";
     const ARG_WIDTH: &str = "width";
     const ARG_HEIGHT: &str = "height";
     const ARG_SCENE: &str = "SCENE";
@@ -29,6 +31,16 @@ fn main() {
             .takes_value(true)
             .help("The name of the renderparameters struct in the config that you want to use. \
             can be omitted if there are less the 2 such structs in the scene config."))
+        .arg(Arg::with_name(ARG_QUALITY_HINT)
+            .short("q")
+            .long(ARG_QUALITY_HINT)
+            .takes_value(true)
+            .help("Activates a quality preset that will overwrite any render-params that are not explicitly set in the scene config"))
+        .arg(Arg::with_name(ARG_QUALITY_OVERRIDE)
+            .short("Q")
+            .long(ARG_QUALITY_OVERRIDE)
+            .takes_value(true)
+            .help("Activates a quality preset that will overwrite any render-params"))
         .arg(Arg::with_name(ARG_WIDTH)
             .short("w")
             .long(ARG_WIDTH)

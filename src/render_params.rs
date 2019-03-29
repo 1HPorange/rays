@@ -2,7 +2,33 @@ use crate::util;
 use crate::color::RGBColor;
 use serde::Deserialize;
 
-#[derive(Copy, Clone, Debug, Default, Deserialize)]
+// This macro generates a deserializable version of the structs where any member is
+// wrapped inside of an Option. This allows us to deserialize a kind of 'override-struct'
+// which can then be used to override only specific values inside of a render-params struct
+
+macro_rules! generate_optional_variant {
+    (
+    $(#[$outer:meta])*    
+    pub struct $name:ident 
+    { 
+        $(
+        $(#[$inner:meta])*    
+        pub $field:ident : $t:ty
+        ),* 
+    }
+    ) => {
+        $(#[$outer])*
+        pub struct $name {
+            $(
+            $(#[$inner])*    
+            pub $field : $t,
+            )* 
+        }
+    }
+}
+
+generate_optional_variant!(
+#[derive(Copy, Clone, Default, Debug, Deserialize)]
 #[serde(default)]
 #[serde(deny_unknown_fields)] 
 pub struct RenderParams {
@@ -11,13 +37,13 @@ pub struct RenderParams {
     pub max_samples: MaxSamples,
     pub ao: AoParameters,
 
-    /// This is the color returned when a ray doesn't hit anything
-    /// If you want a more complex skybox, add it manually as an object
+    // This is the color returned when a ray doesn't hit anything
+    // If you want a more complex skybox, add it manually as an object
     #[serde(default = "const_black")]
-    #[serde(rename = "sky-color")]
+    #[serde(rename = "styky-color")]
     // we make the default sky black to contrast the default object color: white
     pub sky_color: RGBColor
-}
+});
 
 fn const_black() -> RGBColor {
     RGBColor::BLACK
