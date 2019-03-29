@@ -24,6 +24,18 @@ macro_rules! generate_optional_variant {
             pub $field : $t,
             )* 
         }
+
+        mod override_structs {
+            use serde::Deserialize;
+            use super::*;
+
+            $(#[$outer])*
+            pub struct $name {
+                $(  
+                pub $field : Option<$t>,
+                )* 
+            }
+        }
     }
 }
 
