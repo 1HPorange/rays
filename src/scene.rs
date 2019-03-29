@@ -1,6 +1,5 @@
 use super::ray_target::*;
 use super::uv_mappers::*;
-use super::color::*;
 
 pub trait SceneObject: RayTarget + HasUvMapper + Send + Sync {}
 impl<'a, X> SceneObject for X where X: RayTarget + HasUvMapper + Send + Sync {}

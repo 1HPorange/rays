@@ -1,7 +1,7 @@
 [package]
 name = "rays"
 version = "1.0.0"
-authors = ["Markus W. <m@rkus.online>"]
+authors = ["Markus Webel <markuswebel@gmail.com>"]
 edition = "2018"
 
 [dependencies]

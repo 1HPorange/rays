@@ -115,10 +115,10 @@ Similarly to cameras, you only need to specify a `name` key if you have multiple
 ## Using rays
 
 ```sh
-rays [-c "camera-name"] [-p "render-params-name"] [-w 1280] [-h 720] scene.toml ["output.png"]
+rays [-c "camera-name"] [-p "render-params-name"] [-q/Q quality] [-w 1280] [-h 720] scene.toml ["output.png"]
 ```
 
-If multiple `camera` or `render-params` structs are found, but none are supplied as command-line arguments, then the top-most struct is used to render the scene. If none are found, the default structs are used.
+rays has pretty good command-line help (`rays --help`) that explains all possible parameters. Try it out!
 
 ## Examples
 

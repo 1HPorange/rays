@@ -1,6 +1,6 @@
 use crate::color::*;
 use crate::util;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 
 // TODO: Supply useful default values for all these things
 

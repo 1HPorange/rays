@@ -2,7 +2,6 @@ use serde::Deserialize;
 use crate::prelude::*;
 use std::sync::Arc;
 use std::collections::HashMap;
-use std::io;
 
 // TODO: This whole module is pretty awful, but I'm not sure what to do about it
 
@@ -312,7 +311,7 @@ impl IntoUvMapper for NamedMaterial {
 
     fn name(&self) -> &str { &self.name }
 
-    fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
+    fn into_uv_mapper(&self, _mat_map: &HashMap<&str, Material>) 
         -> Result<Arc<dyn UvMapper>, Box<std::error::Error>> {
         Ok(Arc::new(StaticUvMapper(self.material)))
     }
