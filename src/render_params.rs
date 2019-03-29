@@ -8,6 +8,7 @@ use serde::Deserialize;
 
 macro_rules! generate_optional_variant {
     (
+    $(
     $(#[$outer:meta])*    
     pub struct $name:ident 
     { 
@@ -15,34 +16,40 @@ macro_rules! generate_optional_variant {
         $(#[$inner:meta])*    
         pub $field:ident : $t:ty
         ),* 
-    }
+    })*
     ) => {
+        $(
+        #[derive(Copy, Clone, Debug, Deserialize)]
+        #[serde(default)]
+        #[serde(deny_unknown_fields)] 
         $(#[$outer])*
         pub struct $name {
             $(
             $(#[$inner])*    
             pub $field : $t,
             )* 
-        }
+        })*
 
         mod override_structs {
             use serde::Deserialize;
             use super::*;
 
-            $(#[$outer])*
+            $(
+            #[derive(Default)]
+            #[derive(Copy, Clone, Debug, Deserialize)]
+            #[serde(default)]
+            #[serde(deny_unknown_fields)] 
             pub struct $name {
                 $(  
                 pub $field : Option<$t>,
                 )* 
-            }
+            })*
         }
     }
 }
 
 generate_optional_variant!(
-#[derive(Copy, Clone, Default, Debug, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
+#[derive(Default)]
 pub struct RenderParams {
     pub quality: QualityParameters,
     pub dof: DoFParameters,
@@ -55,7 +62,66 @@ pub struct RenderParams {
     #[serde(rename = "styky-color")]
     // we make the default sky black to contrast the default object color: white
     pub sky_color: RGBColor
-});
+}
+
+pub struct QualityParameters {
+
+    /// Range: 0-1
+    /// A ray is not allowed to spawn more rays if its total intensity falls below
+    /// this limit. Setting this value often leads to prettier results than setting
+    /// max_bounces directly
+    pub min_intensity: f64,
+
+    /// How often the raytracing function is allowed to recurse. If set to 0, no
+    /// reflective and refractive effects will be visible at all.
+    /// You can safely set this to std::u32::MAX if you set min_intensity instead
+    pub max_bounces: u32,
+
+    /// Floating point errors can cause visual artifacts in reflections and refraction.
+    /// This bias introduces slight inaccuracies with these phenomena, but removes the
+    /// artifacts. Basically: Keep lowering this until you see artifacts
+    pub bias: f64
+}
+ 
+pub struct MaxSamples {
+ 
+    /// Maximum number of rays that might be sent out when a reflective surface is hit
+    pub reflection: u32,
+
+    /// Maximum number of rays that might be sent out when a refractive surface is hit
+    pub refraction: u32
+}
+
+pub struct DoFParameters {
+
+    /// Sensible Range: Low single digit degrees
+    /// Unit: Degrees
+    /// Maximum angle deviation to the direction that an initial camera ray can get.
+    /// If set to zero, dof.samples is ignored and a single ray is sent out.
+    pub max_angle: f64,
+
+    /// Number of samples that each pixel in the final image consists of. This setting
+    /// is ignored (and treated as 1) when max_angle is set to 0
+    pub samples: u32
+
+}
+
+pub struct AoParameters {
+
+    /// Range: 0-1
+    /// How black the AO shadows are
+    pub strength: f64,
+
+    /// Range: Positive World units
+    /// Fallof range of AO shadows
+    pub distance: f64,
+
+    /// How many sample rays are sent out to estimate AO
+    pub samples: u32
+
+}
+
+);
 
 fn const_black() -> RGBColor {
     RGBColor::BLACK
@@ -140,28 +206,6 @@ impl RenderParams {
 
 // Support structs
 
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
-pub struct QualityParameters {
-
-    /// Range: 0-1
-    /// A ray is not allowed to spawn more rays if its total intensity falls below
-    /// this limit. Setting this value often leads to prettier results than setting
-    /// max_bounces directly
-    pub min_intensity: f64,
-
-    /// How often the raytracing function is allowed to recurse. If set to 0, no
-    /// reflective and refractive effects will be visible at all.
-    /// You can safely set this to std::u32::MAX if you set min_intensity instead
-    pub max_bounces: u32,
-
-    /// Floating point errors can cause visual artifacts in reflections and refraction.
-    /// This bias introduces slight inaccuracies with these phenomena, but removes the
-    /// artifacts. Basically: Keep lowering this until you see artifacts
-    pub bias: f64
-}
-
 impl Default for QualityParameters {
     fn default() -> Self {
         QualityParameters {
@@ -170,18 +214,6 @@ impl Default for QualityParameters {
             bias: 0.0001
         }
     }
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
-pub struct MaxSamples {
- 
-    /// Maximum number of rays that might be sent out when a reflective surface is hit
-    pub reflection: u32,
-
-    /// Maximum number of rays that might be sent out when a refractive surface is hit
-    pub refraction: u32
 }
 
 impl Default for MaxSamples {
@@ -193,23 +225,6 @@ impl Default for MaxSamples {
     }
 }
 
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
-pub struct DoFParameters {
-
-    /// Sensible Range: Low single digit degrees
-    /// Unit: Degrees
-    /// Maximum angle deviation to the direction that an initial camera ray can get.
-    /// If set to zero, dof.samples is ignored and a single ray is sent out.
-    pub max_angle: f64,
-
-    /// Number of samples that each pixel in the final image consists of. This setting
-    /// is ignored (and treated as 1) when max_angle is set to 0
-    pub samples: u32
-
-}
-
 impl Default for DoFParameters {
     fn default() -> Self {
         DoFParameters {
@@ -217,24 +232,6 @@ impl Default for DoFParameters {
             samples: 10
         }
     }
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
-pub struct AoParameters {
-
-    /// Range: 0-1
-    /// How black the AO shadows are
-    pub strength: f64,
-
-    /// Range: Positive World units
-    /// Fallof range of AO shadows
-    pub distance: f64,
-
-    /// How many sample rays are sent out to estimate AO
-    pub samples: u32
-
 }
 
 impl Default for AoParameters {
