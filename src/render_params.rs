@@ -11,7 +11,7 @@ macro_rules! generate_optional_variant {
     $(
     $(#[$outer:meta])*    
     pub struct $name:ident 
-    { 
+    {
         $(
         $(#[$inner:meta])*    
         pub $field:ident : $t:ty
@@ -21,18 +21,27 @@ macro_rules! generate_optional_variant {
         $(
         #[derive(Copy, Clone, Debug, Deserialize)]
         #[serde(default)]
-        #[serde(deny_unknown_fields)] 
-        $(#[$outer])*
+        #[serde(deny_unknown_fields)]
         pub struct $name {
             $(
             $(#[$inner])*    
             pub $field : $t,
             )* 
-        })*
+        }
+        
+        impl $name {
+            pub fn override_with(&mut self, or: override_structs::$name) {
+                $(
+                    if let Some($field) = or.$field {
+                        self.$field = $field;
+                    }
+                )*
+            }
+        }
+        )*
 
-        mod override_structs {
+        pub mod override_structs {
             use serde::Deserialize;
-            use super::*;
 
             $(
             #[derive(Default)]
@@ -48,8 +57,7 @@ macro_rules! generate_optional_variant {
     }
 }
 
-generate_optional_variant!(
-#[derive(Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct RenderParams {
     pub quality: QualityParameters,
     pub dof: DoFParameters,
@@ -58,12 +66,38 @@ pub struct RenderParams {
 
     // This is the color returned when a ray doesn't hit anything
     // If you want a more complex skybox, add it manually as an object
-    #[serde(default = "const_black")]
-    #[serde(rename = "styky-color")]
-    // we make the default sky black to contrast the default object color: white
     pub sky_color: RGBColor
 }
 
+#[derive(Copy, Clone, Default, Debug, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)]
+pub struct RenderParamsOverride {
+    pub quality: override_structs::QualityParameters,
+    pub dof: override_structs::DoFParameters,
+    pub max_samples: override_structs::MaxSamples,
+    pub ao: override_structs::AoParameters,
+
+    #[serde(rename = "sky-color")]
+    pub sky_color: Option<RGBColor>
+}
+
+impl RenderParams {
+    pub fn override_with(mut self, or: &RenderParamsOverride) -> RenderParams {
+        self.quality.override_with(or.quality);
+        self.dof.override_with(or.dof);
+        self.max_samples.override_with(or.max_samples);
+        self.ao.override_with(or.ao);
+        
+        if let Some(sky_color) = or.sky_color {
+            self.sky_color = sky_color;
+        }
+
+        self
+    }
+}
+
+generate_optional_variant!(
 pub struct QualityParameters {
 
     /// Range: 0-1
@@ -103,7 +137,6 @@ pub struct DoFParameters {
     /// Number of samples that each pixel in the final image consists of. This setting
     /// is ignored (and treated as 1) when max_angle is set to 0
     pub samples: u32
-
 }
 
 pub struct AoParameters {
@@ -118,14 +151,9 @@ pub struct AoParameters {
 
     /// How many sample rays are sent out to estimate AO
     pub samples: u32
-
 }
 
 );
-
-fn const_black() -> RGBColor {
-    RGBColor::BLACK
-}
 
 impl RenderParams {
 
@@ -202,6 +230,36 @@ impl RenderParams {
         success
     }
 
+    pub fn preset_sketch() -> RenderParams {
+        
+        let mut rp = RenderParams::default();
+
+        rp.quality.max_bounces = 0;
+        rp.max_samples.reflection = 0;
+        rp.max_samples.refraction = 0;
+        rp.dof.max_angle = 0.0;
+        rp.dof.samples = 1;
+        rp.ao.strength = 0.0;
+        rp.ao.samples = 0;
+
+        rp
+    }
+
+    pub fn preset_low() -> RenderParams {
+        RenderParams::default()
+    }
+
+    pub fn preset_medium() -> RenderParams {
+        RenderParams::default()
+    }
+
+    pub fn preset_high() -> RenderParams {
+        RenderParams::default()
+    }
+
+    pub fn preset_ultra() -> RenderParams {
+        RenderParams::default()
+    }
 }
 
 // Support structs

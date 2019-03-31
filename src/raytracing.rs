@@ -185,8 +185,7 @@ fn raytrace_recursive<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R,
         let mut intensity_scale = 1.0;
 
         // Ambient Occlusion
-        if params.render_params.ao.strength != 0.0 {
-
+        if bounces < params.render_params.quality.max_bounces && params.render_params.ao.strength != 0.0 {
             apply_ao(&mut intensity_scale, rng, params, &hit);
         }
 
