@@ -73,29 +73,50 @@ struct SphereInit {
 
     rotation: Vec3,
 
-    #[serde(rename = "visible-to-camera")]
     #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
     visible_to_camera: bool
 }
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct InfinitePlaneInit {
 
     #[serde(rename = "uv-mapper")]
     uv_mapper: String,
 
     origin: Vec3,
-
     rotation: Vec3,
 
     #[serde(default = "const_f64_one")]
     #[serde(rename = "uv-scale")]
     uv_scale: f64,
 
-    #[serde(rename = "visible-to-camera")]
     #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
+    visible_to_camera: bool
+}
+
+#[derive(Default, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)]
+struct PlaneInit {
+
+    #[serde(rename = "uv-mapper")]
+    uv_mapper: String,
+
+    origin: Vec3,
+    rotation: Vec3,
+
+    #[serde(default = "const_f64_one")]
+    width: f64,
+
+    #[serde(default = "const_f64_one")]
+    height: f64,
+
+    #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
     visible_to_camera: bool
 }
 
@@ -118,6 +139,9 @@ struct RawConfig {
 
     #[serde(rename = "obj-infinite-plane")]
     infinite_planes: Vec<InfinitePlaneInit>,
+
+    #[serde(rename = "obj-plane")]
+    planes: Vec<PlaneInit>,
 
     #[serde(rename = "camera")]
     cameras: Vec<NamedCamera>,
@@ -198,6 +222,8 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     // Construct all geometry and associate it with uv mappers
     let mut scene = Scene::new();
 
+    // TODO: Again: REALLY, REALLY get rid of this code duplication. It makes me depressed
+
     // Let's start with all the spheres
     for init in config.spheres {
 
@@ -225,6 +251,21 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
                 .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
 
             add_infinite_plane_to_scene(&mut scene, Arc::clone(uvm), &init);
+        };
+    }
+
+    // Continuing with the finite planes...
+    for init in config.planes {
+
+        if init.uv_mapper.is_empty() {
+            let uvm = Arc::new(StaticUvMapper(Material::default()));
+
+            add_plane_to_scene(&mut scene, uvm, &init);
+        } else {
+            let uvm = uv_mapper_map.get(&init.uv_mapper[..])
+                .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
+
+            add_plane_to_scene(&mut scene, Arc::clone(uvm), &init);
         };
     }
 
@@ -299,6 +340,19 @@ fn add_infinite_plane_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, 
         init.visible_to_camera);
 
     scene.add(infinite_plane);
+}
+
+fn add_plane_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &PlaneInit) {
+
+    let plane = Plane::new(
+        init.origin, 
+        init.rotation, 
+        init.width, 
+        init.height, 
+        uv_mapper, 
+        init.visible_to_camera);
+
+    scene.add(plane);
 }
 
 trait IntoUvMapper {
