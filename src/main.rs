@@ -8,10 +8,14 @@ fn main() {
 
     const ARG_CAMERA: &str = "camera";
     const ARG_RENDERPARAMS: &str = "render-params";
+    const ARG_QUALITY_HINT: &str = "quality-hint";
+    const ARG_QUALITY_OVERRIDE: &str = "quality-override";
     const ARG_WIDTH: &str = "width";
     const ARG_HEIGHT: &str = "height";
     const ARG_SCENE: &str = "SCENE";
     const ARG_OUTPUT: &str = "OUTPUT";
+    
+    const QUALITY_LEVELS: &[&str] = &["sketch", "low", "medium", "high", "ultra"];
 
     let cla = App::new("rays")
         .version(env!("CARGO_PKG_VERSION"))
@@ -29,6 +33,19 @@ fn main() {
             .takes_value(true)
             .help("The name of the renderparameters struct in the config that you want to use. \
             can be omitted if there are less the 2 such structs in the scene config."))
+        .arg(Arg::with_name(ARG_QUALITY_HINT)
+            .short("q")
+            .long(ARG_QUALITY_HINT)
+            .takes_value(true)
+            .possible_values(&QUALITY_LEVELS)
+            .help("Activates a quality preset that will overwrite any render-params that are not explicitly set in the scene config"))
+        .arg(Arg::with_name(ARG_QUALITY_OVERRIDE)
+            .short("Q")
+            .long(ARG_QUALITY_OVERRIDE)
+            .takes_value(true)
+            .possible_values(&QUALITY_LEVELS)
+            .conflicts_with_all(&[ARG_QUALITY_HINT, ARG_RENDERPARAMS])
+            .help("Activates a quality preset that will overwrite any render-params"))
         .arg(Arg::with_name(ARG_WIDTH)
             .short("w")
             .long(ARG_WIDTH)
@@ -43,7 +60,7 @@ fn main() {
             .required(true)
             .help("A scene configuration file in the TOML format"))
         .arg(Arg::with_name(ARG_OUTPUT)
-            .default_value("output.png")
+            .default_value("output.png") // TODO: Default this to name of scene config file
             .help("Path the the PNG output file"))
         .get_matches();
 
@@ -52,7 +69,11 @@ fn main() {
 
     let camera = extract_camera(cla.value_of(ARG_CAMERA), config.camera_config);
 
-    let render_params = extract_render_params(cla.value_of(ARG_RENDERPARAMS), config.render_params_config);
+    let render_params = extract_render_params(
+        cla.value_of(ARG_RENDERPARAMS), 
+        cla.value_of(ARG_QUALITY_HINT),
+        cla.value_of(ARG_QUALITY_OVERRIDE),
+        config.render_params_config);
 
     let (width, height) = extract_rt_dimensions(cla.value_of(ARG_WIDTH), cla.value_of(ARG_HEIGHT), camera.viewport.aspect());
 
@@ -128,22 +149,50 @@ fn extract_camera(cla_cam: Option<&str>, cam_cfg: CameraConfig) -> Camera {
     }
 }
 
-fn extract_render_params(cla_rp: Option<&str>, rp_cfg: RenderParamsConfig) -> RenderParams {
+fn extract_render_params(
+    cla_rp: Option<&str>, 
+    cla_quality_hint: Option<&str>,
+    cla_quality_override: Option<&str>,
+    rp_cfg: RenderParamsConfig) -> RenderParams {
+
+    // If we have a quality override, we can immediately return
+    if let Some(quality_override) = cla_quality_override {
+        return get_quality_from_cla(quality_override)
+    }
+
+    // Otherwise, we set a baseline quality by evaluating the quality hint
+    let baseline_quality = if let Some(quality_hint) = cla_quality_hint {
+        get_quality_from_cla(quality_hint)
+    } else {
+        RenderParams::preset_medium()
+    };
 
     if let Some(rp_name) = cla_rp {
         
         if let RenderParamsConfig::Multiple(rp_map) = rp_cfg {
-            rp_map.get(rp_name)
-                .expect("Provided render-params name did not correspond to any such struct in the scene config")
-                .clone()
+            let rp = rp_map.get(rp_name)
+                .expect("Provided render-params name did not correspond to any such struct in the scene config");
+
+            baseline_quality.override_with(rp)
         } else {
             panic!("Not allowed to provide a render-params struct name argument when there are less than 2 such structs in the scene config")
         }
     } else {
         if let RenderParamsConfig::Single(rp) = rp_cfg {
-            rp
+            baseline_quality.override_with(&rp)
         } else {
             panic!("You must provide a render-parameter struct name argument when there are multiple such structs in the scene config")
         }
+    }
+}
+
+fn get_quality_from_cla(quality_name: &str) -> RenderParams {
+    match quality_name {
+        "sketch" => RenderParams::preset_sketch(),
+        "low" => RenderParams::preset_low(),
+        "medium" => RenderParams::preset_medium(),
+        "high" => RenderParams::preset_high(),
+        "ultra" => RenderParams::preset_ultra(),
+        _ => unreachable!() // Unreachable because clap should catch illegal variants early
     }
 }

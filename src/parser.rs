@@ -33,7 +33,7 @@ struct NamedRenderParams {
     name: String,
 
     #[serde(flatten)]
-    render_params: RenderParams
+    render_params: crate::render_params::RenderParamsOverride
 }
 
 #[derive(Deserialize)]
@@ -150,8 +150,8 @@ pub enum CameraConfig {
 }
 
 pub enum RenderParamsConfig {
-    Single(RenderParams),
-    Multiple(HashMap<String, RenderParams>)
+    Single(RenderParamsOverride),
+    Multiple(HashMap<String, RenderParamsOverride>)
 }
 
 // TODO: Get rid of code duplication all over this module
@@ -252,7 +252,7 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     // And finally the render parameters
 
     let render_params_config = if config.render_params.is_empty() {
-        RenderParamsConfig::Single(RenderParams::default())
+        RenderParamsConfig::Single(RenderParamsOverride::default()) // Default override doesn't override anything
     } else if config.render_params.len() == 1 {
         RenderParamsConfig::Single(config.render_params[0].render_params)
     } else {
