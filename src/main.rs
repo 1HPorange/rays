@@ -60,7 +60,6 @@ fn main() {
             .required(true)
             .help("A scene configuration file in the TOML format"))
         .arg(Arg::with_name(ARG_OUTPUT)
-            .default_value("output.png") // TODO: Default this to name of scene config file
             .help("Path the the PNG output file"))
         .get_matches();
 
@@ -86,8 +85,13 @@ fn main() {
     let elapsed = before.elapsed();
     println!("Finished in {}.{} s", elapsed.as_secs(), elapsed.subsec_millis());
 
-    render_target.save_as_png(cla.value_of(ARG_OUTPUT).unwrap())
-        .expect("Could not write to output file");
+    let output_path = if let Some(path) = cla.value_of(ARG_OUTPUT) {
+        path.to_owned()
+    } else {
+        std::path::Path::new(cla.value_of(ARG_SCENE).unwrap()).file_stem().unwrap().to_str().unwrap().to_owned() + ".png"
+    };
+
+    render_target.save_as_png(&output_path).expect(&format!("Could not write to output file ({})", &output_path));
 }
 
 fn extract_rt_dimensions(w_input: Option<&str>, h_input: Option<&str>, aspect: f64) -> (usize, usize) {
