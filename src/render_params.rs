@@ -234,6 +234,7 @@ impl RenderParams {
         
         let mut rp = RenderParams::default();
 
+        rp.quality.min_intensity = 1.0;
         rp.quality.max_bounces = 0;
         rp.max_samples.reflection = 0;
         rp.max_samples.refraction = 0;
@@ -246,7 +247,15 @@ impl RenderParams {
     }
 
     pub fn preset_low() -> RenderParams {
-        RenderParams::default()
+        
+        let mut rp = RenderParams::default();
+
+        rp.quality.min_intensity = 0.03;
+        rp.quality.max_bounces = 2;
+        rp.ao.strength = 0.0;
+        rp.ao.samples = 1;
+
+        rp
     }
 
     pub fn preset_medium() -> RenderParams {
@@ -254,11 +263,26 @@ impl RenderParams {
     }
 
     pub fn preset_high() -> RenderParams {
-        RenderParams::default()
+        
+        let mut rp = RenderParams::default();
+
+        rp.quality.max_bounces = 6;
+        rp.dof.samples = 40;
+        rp.ao.samples = 4;
+
+        rp
     }
 
     pub fn preset_ultra() -> RenderParams {
-        RenderParams::default()
+
+        let mut rp = RenderParams::default();
+
+        rp.quality.min_intensity = 0.01;
+        rp.quality.max_bounces = std::u32::MAX;
+        rp.dof.samples = 70;
+        rp.ao.samples = 6;
+
+        rp
     }
 }
 
@@ -268,7 +292,7 @@ impl Default for QualityParameters {
     fn default() -> Self {
         QualityParameters {
             min_intensity: 0.03,
-            max_bounces: std::u32::MAX,
+            max_bounces: 4,
             bias: 0.0001
         }
     }
@@ -277,7 +301,7 @@ impl Default for QualityParameters {
 impl Default for MaxSamples {
     fn default() -> Self {
         MaxSamples {
-            reflection: 6,
+            reflection: 3,
             refraction: 1
         }
     }
@@ -287,7 +311,7 @@ impl Default for DoFParameters {
     fn default() -> Self {
         DoFParameters {
             max_angle: 0.1,
-            samples: 10
+            samples: 20
         }
     }
 }
@@ -297,7 +321,7 @@ impl Default for AoParameters {
         AoParameters {
             strength: 0.8,
             distance: 2.0,
-            samples: 3
+            samples: 2
         }
     }
 }
