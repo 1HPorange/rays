@@ -32,8 +32,6 @@ UV mappers are important if you want a single piece of geometry to have multiple
 For now, there are 2 types of UV mappers:
 
 ```toml
-[[uv-mappers]]
-
 # Creates a checkerboard pattern of two materials
 [[uvm-checkerboard]]
 name = "chessboard"
