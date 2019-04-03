@@ -70,15 +70,24 @@ uv-scale = 0.1 # Distance after which uvs wrap around in world units
 rotation = [0.0, 0.0, 0.0] # default orientation is flat on the XZ-plane
 
 [[obj-plane]]
-uv-mapper = "chessboard"
+uv-mapper = "mirror"
 origin = [0.0, 0.0, 0.0]
 visible-to-camera = true
 rotation = [0.0, 0.0, 0.0]
 width = 1.0
 height = 1.0
+
+[[obj-cube]]
+uv-mapper = "companion"
+origin = [0.0, 0.0, 0.0]
+visible-to-camera = true
+rotation = [0.0, 0.0, 0.0]
+width = 1.0
+height = 1.0
+depth = 1.0
 ```
 
-`uv-mapper` is the only required key.
+None of the keys are required.
 
 ### Cameras (optional)
 
