@@ -2,6 +2,8 @@ use crate::vec::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
 use crate::ray_target::*;
+use crate::parser::{const_f64_one, const_true};
+use serde::Deserialize;
 use std::sync::Arc;
 
 pub struct InifinitePlane {
@@ -20,25 +22,38 @@ pub struct InifinitePlane {
     forwards: Vec3Norm
 }
 
+#[derive(Default, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)]
+pub struct InfinitePlaneInit {
+    origin: Vec3,
+    rotation: Vec3,
+
+    #[serde(default = "const_f64_one")]
+    #[serde(rename = "uv-scale")]
+    uv_scale: f64,
+
+    #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
+    visible_to_camera: bool
+}
+
 impl InifinitePlane {
 
-    pub fn new(origin: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64, visible_to_camera: bool) -> InifinitePlane {
-        InifinitePlane::with_rotation(origin, Vec3::ZERO, uv_mapper, uv_scale, visible_to_camera)
-    }
+    pub fn new(init: &InfinitePlaneInit, uv_mapper: Arc<dyn UvMapper>) -> InifinitePlane {
 
-    pub fn with_rotation(origin: Vec3, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, uv_scale: f64, visible_to_camera: bool) -> InifinitePlane {
-
-        let normal = Vec3Norm::UP.rotate(rotation);
-        let right = Vec3Norm::RIGHT.rotate(rotation);
+        let normal = Vec3Norm::UP.rotate(init.rotation);
+        let right = Vec3Norm::RIGHT.rotate(init.rotation);
         let forwards = right.cross(normal).normalized();
 
+        // TODO: Fix this atrocious order
         InifinitePlane {
-            origin,
+            origin: init.origin,
             normal,
             right,
             uv_mapper,
-            uv_scale,
-            visible_to_camera,
+            uv_scale: init.uv_scale,
+            visible_to_camera: init.visible_to_camera,
             forwards
         }
     }

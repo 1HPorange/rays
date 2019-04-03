@@ -3,6 +3,8 @@ use crate::uv_mappers::*;
 use crate::ray_target::*;
 use super::InifinitePlane;
 use crate::raytracing::*;
+use crate::parser::{const_f64_one, const_true};
+use serde::Deserialize;
 use std::sync::Arc;
 
 pub struct Plane {
@@ -22,20 +24,38 @@ pub struct Plane {
     forwards: Vec3Norm,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)]
+pub struct PlaneInit {
+    origin: Vec3,
+    rotation: Vec3,
+
+    #[serde(default = "const_f64_one")]
+    width: f64,
+
+    #[serde(default = "const_f64_one")]
+    height: f64,
+
+    #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
+    visible_to_camera: bool
+}
+
 impl Plane {
 
-    pub fn new(origin: Vec3, rotation: Vec3, width: f64, height: f64, uv_mapper: Arc<dyn UvMapper>, visible_to_camera: bool) -> Plane {
+    pub fn new(init: &PlaneInit, uv_mapper: Arc<dyn UvMapper>) -> Plane {
 
-        let normal = Vec3Norm::UP.rotate(rotation);
-        let right = Vec3Norm::RIGHT.rotate(rotation);
+        let normal = Vec3Norm::UP.rotate(init.rotation);
+        let right = Vec3Norm::RIGHT.rotate(init.rotation);
         let forwards = right.cross(normal).normalized();
 
         Plane {
-            origin,
-            width,
-            height,
+            origin: init.origin,
+            width: init.width,
+            height: init.height,
             uv_mapper,
-            visible_to_camera,
+            visible_to_camera: init.visible_to_camera,
             normal,
             right,
             forwards
