@@ -51,7 +51,7 @@ path = "D:/Downloads/skyline.png"
 
 ### Geometry / Objects
 
-Geometry are the physical objects you want to display in your scene, usually including the skybox / skysphere. At the moment, two primitives are available:
+Geometry are the physical objects you want to display in your scene, usually including the skybox / skysphere. At the moment, only a few primitives are available:
 
 ```toml
 [[obj-sphere]]
@@ -60,15 +60,22 @@ uv-mapper = "pure-white"
 origin = [0.0, 0.0, 0.0]
 radius = 1.0
 visible-to-camera = true # if false, can just be seen through reflection / refraction
-# only important if you care about uv orientation:
-rotation = [0.0, 0.0, 0.0]
+rotation = [0.0, 0.0, 0.0] # only important if you care about uv orientation
 
 [[obj-infinite-plane]]
 uv-mapper = "chessboard"
 origin = [0.0, 0.0, 0.0]
 visible-to-camera = true
-# default orientation is flat on the XZ-plane:
+uv-scale = 0.1 # Distance after which uvs wrap around in world units
+rotation = [0.0, 0.0, 0.0] # default orientation is flat on the XZ-plane
+
+[[obj-plane]]
+uv-mapper = "chessboard"
+origin = [0.0, 0.0, 0.0]
+visible-to-camera = true
 rotation = [0.0, 0.0, 0.0]
+width = 1.0
+height = 1.0
 ```
 
 `uv-mapper` is the only required key.

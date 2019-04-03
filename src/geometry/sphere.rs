@@ -2,6 +2,8 @@ use crate::vec::*;
 use crate::uv_mappers::*;
 use crate::raytracing::*;
 use crate::ray_target::*;
+use crate::parser::{const_f64_one, const_true};
+use serde::Deserialize;
 use std::sync::Arc;
 
 pub struct Sphere {
@@ -16,24 +18,36 @@ pub struct Sphere {
     visible_to_camera: bool
 }
 
+#[derive(Default, Deserialize)]
+#[serde(default)]
+#[serde(deny_unknown_fields)] 
+pub struct SphereInit {
+
+    origin: Vec3,
+
+    #[serde(default = "const_f64_one")]
+    radius: f64,
+
+    rotation: Vec3,
+
+    #[serde(default = "const_true")]
+    #[serde(rename = "visible-to-camera")]
+    visible_to_camera: bool
+}
+
 impl Sphere {
 
-    pub fn new(origin: Vec3, radius: f64, uv_mapper: Arc<dyn UvMapper>, visible_to_camera: bool) -> Sphere {
-        Sphere::with_rotation(origin, radius, Vec3::ZERO, uv_mapper, visible_to_camera)
-    }
-
-    pub fn with_rotation(origin: Vec3, radius: f64, rotation: Vec3, uv_mapper: Arc<dyn UvMapper>, visible_to_camera: bool) -> Sphere {
-
-        let up = Vec3Norm::UP.rotate(rotation);
-        let right = Vec3Norm::RIGHT.rotate(rotation);
+    pub fn new(init: &SphereInit, uv_mapper: Arc<dyn UvMapper>) -> Sphere {
+        let up = Vec3Norm::UP.rotate(init.rotation);
+        let right = Vec3Norm::RIGHT.rotate(init.rotation);
 
         Sphere {
-            origin,
-            radius,
+            origin: init.origin,
+            radius: init.radius,
             uv_mapper,
             up,
             right,
-            visible_to_camera
+            visible_to_camera: init.visible_to_camera
         }
     }
 }

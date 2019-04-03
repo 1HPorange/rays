@@ -432,12 +432,12 @@ fn get_ray_count_for_intensity(intensity: f64, max_rays: u32) -> u32 {
     (1.0 + intensity * (max_rays - 1) as f64).round() as u32
 }
 
+// TODO: This should probably be somewhere else
 // Comparison function that determines which raycast hit is closer to the supplied point
-fn hit_dist_comp(point: Vec3, a: &GeometryHitInfo, b: &GeometryHitInfo) -> cmp::Ordering {
+pub fn hit_dist_comp(point: Vec3, a: &GeometryHitInfo, b: &GeometryHitInfo) -> cmp::Ordering {
 
-    let dist = |rch: &GeometryHitInfo| {
-        (rch.position - point).sqr_length()
-    };
+    let dist_a = (a.position - point).sqr_length();
+    let dist_b = (b.position - point).sqr_length();
 
-    dist(a).partial_cmp(&dist(b)).unwrap_or(cmp::Ordering::Equal)
+    dist_a.partial_cmp(&dist_b).unwrap_or(cmp::Ordering::Equal)
 }

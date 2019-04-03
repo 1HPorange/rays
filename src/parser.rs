@@ -60,44 +60,16 @@ struct UvmTextureInit {
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-#[serde(deny_unknown_fields)] 
-struct SphereInit {
-
+#[serde(deny_unknown_fields)]
+struct NamedGeometryInit<T> {
     #[serde(rename = "uv-mapper")]
     uv_mapper: String,
 
-    origin: Vec3,
-
-    #[serde(default = "const_f64_one")]
-    radius: f64,
-
-    rotation: Vec3,
-
-    #[serde(rename = "visible-to-camera")]
-    #[serde(default = "const_true")]
-    visible_to_camera: bool
+    #[serde(flatten)]
+    init: T
 }
 
-#[derive(Default, Deserialize)]
-#[serde(default)]
-#[serde(deny_unknown_fields)] 
-struct InfinitePlaneInit {
-
-    #[serde(rename = "uv-mapper")]
-    uv_mapper: String,
-
-    origin: Vec3,
-
-    rotation: Vec3,
-
-    #[serde(default = "const_f64_one")]
-    #[serde(rename = "uv-scale")]
-    uv_scale: f64,
-
-    #[serde(rename = "visible-to-camera")]
-    #[serde(default = "const_true")]
-    visible_to_camera: bool
-}
+// Main config struct that is parsed
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
@@ -114,10 +86,16 @@ struct RawConfig {
     uvm_textures: Vec<UvmTextureInit>,
 
     #[serde(rename = "obj-sphere")]
-    spheres: Vec<SphereInit>,
+    spheres: Vec<NamedGeometryInit<SphereInit>>,
 
     #[serde(rename = "obj-infinite-plane")]
-    infinite_planes: Vec<InfinitePlaneInit>,
+    infinite_planes: Vec<NamedGeometryInit<InfinitePlaneInit>>,
+
+    #[serde(rename = "obj-plane")]
+    planes: Vec<NamedGeometryInit<PlaneInit>>,
+
+    #[serde(rename = "obj-cube")]
+    cubes: Vec<NamedGeometryInit<CubeInit>>,
 
     #[serde(rename = "camera")]
     cameras: Vec<NamedCamera>,
@@ -128,11 +106,11 @@ struct RawConfig {
 
 // Useful defaults
 
-fn const_f64_one() -> f64 {
+pub fn const_f64_one() -> f64 {
     1.0
 }
 
-fn const_true() -> bool {
+pub fn const_true() -> bool {
     true
 }
 
@@ -198,34 +176,30 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     // Construct all geometry and associate it with uv mappers
     let mut scene = Scene::new();
 
+    // TODO: Again: REALLY, REALLY get rid of this code duplication. It makes me depressed
+
     // Let's start with all the spheres
     for init in config.spheres {
-
-        if init.uv_mapper.is_empty() {
-            let uvm = Arc::new(StaticUvMapper(Material::default()));
-
-            add_sphere_to_scene(&mut scene, uvm, &init);
-        } else {
-            let uvm = uv_mapper_map.get(&init.uv_mapper[..])
-                .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
-
-            add_sphere_to_scene(&mut scene, Arc::clone(uvm), &init);
-        };
+        let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
+        scene.add(Sphere::new(&init.init, uvm));
     }
 
     // And now let's do the infinite planes
     for init in config.infinite_planes {
+        let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
+        scene.add(InifinitePlane::new(&init.init, uvm));
+    }
 
-        if init.uv_mapper.is_empty() {
-            let uvm = Arc::new(StaticUvMapper(Material::default()));
+    // Continuing with the finite planes...
+    for init in config.planes {
+        let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
+        scene.add(Plane::new(&init.init, uvm));
+    }
 
-            add_infinite_plane_to_scene(&mut scene, uvm, &init);
-        } else {
-            let uvm = uv_mapper_map.get(&init.uv_mapper[..])
-                .ok_or(format!("UV mapper or material \"{}\" not found", init.uv_mapper))?;
-
-            add_infinite_plane_to_scene(&mut scene, Arc::clone(uvm), &init);
-        };
+    // And finally cubes
+    for init in config.cubes {
+        let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
+        scene.add(Cube::new(&init.init, uvm));
     }
 
     // Now we handle the cameras
@@ -277,28 +251,13 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     })
 }
 
-fn add_sphere_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &SphereInit) {
-
-    let sphere = Sphere::with_rotation(
-        init.origin, 
-        init.radius, 
-        init.rotation, 
-        uv_mapper,
-        init.visible_to_camera);
-
-    scene.add(sphere);
-}
-
-fn add_infinite_plane_to_scene(scene: &mut Scene, uv_mapper: Arc<dyn UvMapper>, init: &InfinitePlaneInit) {
-
-    let infinite_plane = InifinitePlane::with_rotation(
-        init.origin, 
-        init.rotation, 
-        uv_mapper, 
-        init.uv_scale,
-        init.visible_to_camera);
-
-    scene.add(infinite_plane);
+fn str_to_uv_mapper(key: &str, uv_mapper_map: &HashMap<&str, Arc<dyn UvMapper>>) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
+    if key.is_empty() {
+        Ok(Arc::new(StaticUvMapper(Material::default())))
+    } else {
+        Ok(Arc::clone(uv_mapper_map.get(key)
+            .ok_or(format!("UV mapper or material \"{}\" not found", key))?))
+    }
 }
 
 trait IntoUvMapper {
