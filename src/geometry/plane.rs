@@ -28,18 +28,18 @@ pub struct Plane {
 #[serde(default)]
 #[serde(deny_unknown_fields)]
 pub struct PlaneInit {
-    origin: Vec3,
-    rotation: Vec3,
+    pub origin: Vec3,
+    pub rotation: Vec3,
 
     #[serde(default = "const_f64_one")]
-    width: f64,
+    pub width: f64,
 
     #[serde(default = "const_f64_one")]
-    height: f64,
+    pub height: f64,
 
     #[serde(default = "const_true")]
     #[serde(rename = "visible-to-camera")]
-    visible_to_camera: bool
+    pub visible_to_camera: bool
 }
 
 impl Plane {

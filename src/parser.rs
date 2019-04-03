@@ -94,6 +94,9 @@ struct RawConfig {
     #[serde(rename = "obj-plane")]
     planes: Vec<NamedGeometryInit<PlaneInit>>,
 
+    #[serde(rename = "obj-cube")]
+    cubes: Vec<NamedGeometryInit<CubeInit>>,
+
     #[serde(rename = "camera")]
     cameras: Vec<NamedCamera>,
 
@@ -191,6 +194,12 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     for init in config.planes {
         let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
         scene.add(Plane::new(&init.init, uvm));
+    }
+
+    // And finally cubes
+    for init in config.cubes {
+        let uvm = str_to_uv_mapper(&init.uv_mapper, &uv_mapper_map)?;
+        scene.add(Cube::new(&init.init, uvm));
     }
 
     // Now we handle the cameras
