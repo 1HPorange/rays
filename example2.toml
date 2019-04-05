@@ -1,10 +1,10 @@
 [[material]]
 name = "white"
-reflection = { center = -0.1, edges = 0.8, power = 1.0, max_angle = 20.0 }
+reflection = { center = 0, edges = 0.8, power = 1.0, max_angle = 20.0 }
 
 [[material]]
 name = "black"
-color = [0.0, 0.0, 0.0]
+color = [0.25, 0.25, 0.25]
 reflection = { center = 0.35, edges = 0.9, power = 1.0, max_angle = 20.0 }
 
 [[material]]
@@ -24,12 +24,12 @@ refraction = { ior = 1.0, max_angle = 6.0 }
 
 [[material]]
 name = "colored-diffuse"
-color = [0.45, 0.3, 0.45]
-reflection = { center = 0.15, edges = 0.6, power = 3.0, max_angle = 8.0 }
+color = [0.901, 0.745, 0.541]
+reflection = { center = 0.5, edges = 0.9, power = 2, max_angle = 25 }
 
 [[material]]
 name = "marble"
-reflection = { center = 0.05, edges = 0.8, power = 3.0, max_angle = 0.0 }
+reflection = { center = 0.05, edges = 0.8, power = 5.0, max_angle = 0.0, color = [1,1,1] }
 
 [[uvm-checkerboard]]
 name = "floor-tex"

@@ -275,19 +275,25 @@ fn hit_object<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_inf
     }
 
     // Add reflective influence to output if the influence threshold is met
-    if total_reflection_intensity > params.render_params.quality.min_intensity {     
-        reflect(params, rng, hit_info, total_reflection_intensity, &mut output)
+    if total_reflection_intensity > params.render_params.quality.min_intensity {
+
+        let tint = hit_info.mat.reflection.color.unwrap_or(hit_info.mat.color);
+
+        output += tint * reflect(params, rng, hit_info, total_reflection_intensity);
     }
 
     // Add refractive influence to output if the influence threshold is met
     if total_refraction_intensity > params.render_params.quality.min_intensity {
-        refract(params, rng, hit_info, total_refraction_intensity, &mut output)
+
+        let tint = hit_info.mat.refraction.color.unwrap_or(hit_info.mat.color);
+
+        output += tint * refract(params, rng, hit_info, total_refraction_intensity)
     }
 
     output
 }
 
-fn reflect<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: &HitInfo, total_intensity: f64, output: &mut RGBColor) {
+fn reflect<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: &HitInfo, total_intensity: f64) -> RGBColor {
 
     // Origin of all reflected rays including bias
     let origin = hit_info.hit.position + hit_info.hit.normal * params.render_params.quality.bias;
@@ -300,8 +306,7 @@ fn reflect<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
 
         let ray = Ray { origin, direction };
 
-        *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity);
-
+        raytrace_recursive(params, rng, ray, hit_info.bounces + 1, total_intensity)
     } else {
 
         let ray_count = get_ray_count_for_intensity(total_intensity, params.render_params.max_samples.reflection);
@@ -310,6 +315,8 @@ fn reflect<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
 
         let ray_intensity = total_intensity / ray_directions.len() as f64;
 
+        let mut output = RGBColor::BLACK;
+
         for dir in ray_directions {
 
             let ray = Ray {
@@ -317,13 +324,14 @@ fn reflect<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
+            output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
         }
 
+        output
     }
 }
 
-fn refract<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: &HitInfo, total_intensity: f64, output: &mut RGBColor) {
+fn refract<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: &HitInfo, total_intensity: f64) -> RGBColor {
     
     // This closure is magic and was stolen from:
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/introduction-to-shading/reflection-refraction-fresnel
@@ -361,8 +369,7 @@ fn refract<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
     if hit_info.mat.refraction.max_angle == 0.0 {
 
          // Special case for perfect refraction: We only need to send out a single ray
-
-        *output += raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity);
+        raytrace_recursive(params, rng, refr_ray, hit_info.bounces + 1, total_intensity)
 
     } else {
 
@@ -378,6 +385,8 @@ fn refract<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
 
         let ray_intensity = total_intensity / directions.len() as f64;
 
+        let mut output = RGBColor::BLACK;
+
         for dir in directions {
 
             let ray = Ray {
@@ -385,9 +394,10 @@ fn refract<R: Rng + ?Sized>(params: &RaytraceParameters, rng: &mut R, hit_info: 
                 direction: dir
             };
 
-            *output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
+            output += raytrace_recursive(params, rng, ray, hit_info.bounces + 1, ray_intensity);
         }
 
+        output
     }
 }
 

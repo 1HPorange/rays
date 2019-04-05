@@ -37,6 +37,10 @@ impl RGBColor {
         
         true
     }
+
+    pub fn lerp_towards(self, other: Self, t: f64) -> Self {
+        self * (1.0 - t) + other * t
+    }
 }
 
 impl From<RGBColor> for [u8;3] {
@@ -107,21 +111,17 @@ impl std::ops::AddAssign for RGBColor {
 
 }
 
-// impl From<RGBAColor> for RGBColor {
+impl std::ops::Mul for RGBColor {
+    type Output = Self;
 
-//     fn from(col: RGBAColor) -> RGBColor {
-//         RGBColor { r: col.r, g: col.g, b: col.b }
-//     }
-
-// }
-
-// impl From<RGBColor> for RGBAColor {
-
-//     fn from(col: RGBColor) -> RGBAColor {
-//         RGBAColor { r: col.r, g: col.g, b: col.b, a: 1.0 }
-//     }
-
-// }
+    fn mul(self, rhs: Self) -> Self {
+        RGBColor {
+            r: self.r * rhs.r,
+            g: self.g * rhs.g,
+            b: self.b * rhs.b
+        }
+    }
+}
 
 // Deserialization
 use serde::{Deserialize, Deserializer};

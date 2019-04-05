@@ -4,6 +4,20 @@ A raytracer written in rust with a focus on simplicity over features or performa
 
 That said, it can make pretty neat pictures.
 
+## Examples
+
+![](example2.jpg)
+
+![](example1.jpg)
+
+## Using rays
+
+```sh
+rays [-c "camera-name"] [-p "render-params-name"] [-q/Q quality] [-w 1280] [-h 720] scene.toml ["output.png"]
+```
+
+rays has pretty good command-line help (`rays --help`) that explains all possible parameters. Try it out!
+
 ## Configuration Format
 
 Each scene is described by a configuration file `scene-name.toml`, using the TOML format (https://github.com/toml-lang/toml). Configuration files are validated before rendering, so don't be afraid to experiment.
@@ -19,11 +33,11 @@ Usually, you want to start out by defining some materials. A material is specifi
 name = "pure-white"
 color = [1.0, 1.0, 1.0]
 opacity = { center = 1.0, edges = 1.0, power = 1.0 }
-reflection = { center = 0.0, edges = 0.0, power = 1.0, max_angle = 0.0 }
-refraction = { ior = 1.33, max_angle = 0.0 }
+reflection = { center = 0.0, edges = 0.0, power = 1.0, max_angle = 0.0, color = *same as mat color* }
+refraction = { ior = 1.33, max_angle = 0.0, color = *same as mat color* }
 ```
 
-The only mandatory key is `name`. Omitted keys take their default values, which can be seen above. The default material is pure white without any reflections or transparency / refraction. Note that if you chose to specify the opacity, reflection and/or refraction keys, you need to specify them completely (all sub-keys). Partial definitions will be rejected.
+The only mandatory key is `name`. Omitted keys take their default values, which can be seen above. The default material is pure white without any reflections or transparency / refraction.
 
 ### UV Mappers (optional)
 
@@ -125,19 +139,3 @@ ao.samples = 3
 ```
 
 Similarly to cameras, you only need to specify a `name` key if you have multiple `render-params` structs. Every key is optional and has a default value. It's also possible to omit this struct completely.
-
-## Using rays
-
-```sh
-rays [-c "camera-name"] [-p "render-params-name"] [-q/Q quality] [-w 1280] [-h 720] scene.toml ["output.png"]
-```
-
-rays has pretty good command-line help (`rays --help`) that explains all possible parameters. Try it out!
-
-## Examples
-
-![](example1.jpg)
-
-![](example2.jpg)
-
-![](example3.jpg)

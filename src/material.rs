@@ -28,7 +28,8 @@ pub struct Reflection {
     pub center: f64,
     pub edges: f64,
     pub power: f64,
-    pub max_angle: f64
+    pub max_angle: f64,
+    pub color: Option<RGBColor>
 }
 
 #[derive(Debug, Copy, Clone, Deserialize)]
@@ -36,6 +37,7 @@ pub struct Reflection {
 pub struct Refraction {
     pub ior: f64,
     pub max_angle: f64,
+    pub color: Option<RGBColor>
 }
 
 impl Material {
@@ -112,8 +114,8 @@ impl Default for Opacity {
 
 impl Reflection {
 
-    pub fn new(center: f64, edges: f64, power: f64, max_angle: f64) -> Reflection {
-        Reflection { center, edges, power, max_angle }
+    pub fn new(center: f64, edges: f64, power: f64, max_angle: f64, color: Option<RGBColor>) -> Reflection {
+        Reflection { center, edges, power, max_angle, color }
     }
 }
 
@@ -124,15 +126,16 @@ impl Default for Reflection {
             center: 0.0,
             edges: 0.0,
             power: 1.0,
-            max_angle: 0.0
+            max_angle: 0.0,
+            color: None
         }
     }
 }
 
 impl Refraction {
 
-    pub fn new(ior: f64, max_angle: f64) -> Refraction {
-        Refraction { ior, max_angle }
+    pub fn new(ior: f64, max_angle: f64, color: Option<RGBColor>) -> Refraction {
+        Refraction { ior, max_angle, color }
     }
 }
 
@@ -141,7 +144,8 @@ impl Default for Refraction {
     fn default() -> Self {
         Refraction {
             ior: 1.33,
-            max_angle: 0.0
+            max_angle: 0.0,
+            color: None
         }
     }
 }
