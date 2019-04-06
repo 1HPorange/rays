@@ -1,51 +1,83 @@
 [[material]]
-name = "full-diffuse"
-reflection = { center = 1.0, edges = 1.0, power = 1.0, max_angle = 90.0 }
+name = "white"
+reflection = { center = 0, edges = 0.8, power = 1.0, max_angle = 20.0 }
 
 [[material]]
-name = "gray"
-color = [0.5, 0.5, 0.5]
+name = "black"
+color = [0.25, 0.25, 0.25]
+reflection = { center = 0.35, edges = 0.9, power = 1.0, max_angle = 20.0 }
 
 [[material]]
-name = "orange"
-color = [1.0, 0.6, 0.1]
+name = "very-reflective"
+reflection = { center = 0.75, edges = 1.0, power = 4.0, max_angle = 0.0 }
 
 [[material]]
-name = "blue"
-color = [0.25, 0.75, 1.0]
+name = "glass"
+opacity = { center = 0.05, edges = 1.0, power = 2.0 }
+reflection = { center = 1.0, edges = 1.0, power = 1.0, max_angle = 0.0 }
+
+[[material]]
+name = "refract-blurry"
+opacity = { center = 0.1, edges = 0.75, power = 3.0 }
+reflection = { center = 0.5, edges = 0.5, power = 1.0, max_angle = 0.0 }
+refraction = { ior = 1.0, max_angle = 6.0 }
+
+[[material]]
+name = "colored-diffuse"
+color = [0.901, 0.745, 0.541]
+reflection = { center = 0.5, edges = 0.9, power = 2, max_angle = 25 }
+
+[[material]]
+name = "marble"
+reflection = { center = 0.05, edges = 0.8, power = 5.0, max_angle = 0.0, color = [1,1,1] }
+
+[[uvm-checkerboard]]
+name = "floor-tex"
+even = "black"
+odd = "white"
+
+[[uvm-texture]]
+name = "sky-tex"
+path = "sky.png"
+
+[[uvm-texture]]
+name = "marble-tex"
+base = "marble"
+path = "marble.png"
 
 [[obj-sphere]]
-uv-mapper = "full-diffuse"
-origin = [0.0, 7.5, 11.0]
+uv-mapper = "glass"
+origin = [-8.0, 7.0, 20.0]
+radius = 7.0
+
+[[obj-sphere]]
+uv-mapper = "very-reflective"
+origin = [8.0, 7.0, 20.0]
+radius = 7.0
+
+[[obj-sphere]]
+uv-mapper = "marble-tex"
+origin = [-12.0, 4.0, 7.5]
+radius = 4.0
+
+[[obj-sphere]]
+uv-mapper = "colored-diffuse"
+origin = [0.0, 4.5, 5.0]
 radius = 4.5
 
-[[obj-infinite-plane]]
-uv-mapper = "full-diffuse"
+[[obj-sphere]]
+uv-mapper = "refract-blurry"
+origin = [12.0, 4.0, 7.5]
+radius = 4.0
+
+[[obj-sphere]]
+uv-mapper = "sky-tex"
+radius = 1000.0
 
 [[obj-infinite-plane]]
-uv-mapper = "full-diffuse"
-origin = [0.0, 15.0, 0.0]
-rotation = [180.0, 0.0, 0.0]
-
-[[obj-infinite-plane]]
-uv-mapper = "gray"
-origin = [0.0, 0.0, 20.0]
-rotation = [-90.0, 0.0, 0.0]
-
-[[obj-infinite-plane]]
-uv-mapper = "orange"
-origin = [-15.0, 0.0, 0.0]
-rotation = [90.0, 90.0, 0.0]
-
-[[obj-infinite-plane]]
-uv-mapper = "blue"
-origin = [15.0, 0.0, 0.0]
-rotation = [90.0, -90.0, 0.0]
+uv-mapper = "floor-tex"
+uv-scale = 0.1
 
 [[camera]]
-position = [0.0, 7.5, -10.0]
-fov_h = 40.0
-
-[[render-params]]
-ao.strength = 0.4
-ao.distance = 5.0
+position = [0.0, 15.0, -10.0]
+rotation = [25.0, 0.0, 0.0]
