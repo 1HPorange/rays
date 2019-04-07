@@ -6,9 +6,9 @@ That said, it can make pretty neat pictures.
 
 ## Examples
 
-![](example2.jpg)
-
 ![](example1.jpg)
+
+![](example2.jpg)
 
 ## Using rays
 
