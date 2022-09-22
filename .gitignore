@@ -1,5 +1,7 @@
 /target
 **/*.rs.bk
+*.jpeg
+*.jpg
 *.png
 !example1.jpg
 !example2.jpg

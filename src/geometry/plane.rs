@@ -1,21 +1,20 @@
-use crate::vec::*;
-use crate::uv_mappers::*;
-use crate::ray_target::*;
 use super::InifinitePlane;
-use crate::raytracing::*;
 use crate::parser::{const_f64_one, const_true};
+use crate::ray_target::*;
+use crate::raytracing::*;
+use crate::uv_mappers::*;
+use crate::vec::*;
 use serde::Deserialize;
 use std::sync::Arc;
 
 pub struct Plane {
-
     pub origin: Vec3,
 
     // HALF of the plane extents
     pub width: f64,
     pub height: f64,
 
-    pub uv_mapper: Arc<UvMapper>,
+    pub uv_mapper: Arc<dyn UvMapper>,
     pub visible_to_camera: bool,
 
     // Vectors calculated at time of construction
@@ -39,13 +38,11 @@ pub struct PlaneInit {
 
     #[serde(default = "const_true")]
     #[serde(rename = "visible-to-camera")]
-    pub visible_to_camera: bool
+    pub visible_to_camera: bool,
 }
 
 impl Plane {
-
     pub fn new(init: &PlaneInit, uv_mapper: Arc<dyn UvMapper>) -> Plane {
-
         let normal = Vec3Norm::UP.rotate(init.rotation);
         let right = Vec3Norm::RIGHT.rotate(init.rotation);
         let forwards = right.cross(normal).normalized();
@@ -58,16 +55,13 @@ impl Plane {
             visible_to_camera: init.visible_to_camera,
             normal,
             right,
-            forwards
+            forwards,
         }
     }
-
 }
 
 impl RayTarget for Plane {
-
     fn test_intersection(&self, ray: &Ray) -> Option<GeometryHitInfo> {
-
         let hitpoint = InifinitePlane::get_ray_intersection(self.origin, self.normal, ray)?;
 
         let origin_to_hitpoint = hitpoint - self.origin;
@@ -88,7 +82,7 @@ impl RayTarget for Plane {
                 Some(GeometryHitInfo {
                     position: hitpoint,
                     normal: self.normal,
-                    uv: Vec2::new(u, v)
+                    uv: Vec2::new(u, v),
                 })
             } else {
                 None
@@ -104,7 +98,6 @@ impl RayTarget for Plane {
 }
 
 impl HasUvMapper for Plane {
-
     fn get_uv_mapper(&self) -> &Arc<dyn UvMapper> {
         &self.uv_mapper
     }

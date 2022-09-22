@@ -1,51 +1,49 @@
-use serde::Deserialize;
 use crate::prelude::*;
-use std::sync::Arc;
+use serde::Deserialize;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 // TODO: This whole module is pretty awful, but I'm not sure what to do about it
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct NamedMaterial {
     name: String,
 
     #[serde(flatten)]
-    material: Material
+    material: Material,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct NamedCamera {
-
     name: String,
-    
+
     #[serde(flatten)]
-    camera: Camera
+    camera: Camera,
 }
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct NamedRenderParams {
-
     name: String,
 
     #[serde(flatten)]
-    render_params: crate::render_params::RenderParamsOverride
+    render_params: crate::render_params::RenderParamsOverride,
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct UvmCheckerboardInit {
     name: String,
     even: String,
-    odd: String
+    odd: String,
 }
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct UvmTextureInit {
     name: String,
 
@@ -55,7 +53,7 @@ struct UvmTextureInit {
     path: String,
 
     #[serde(default)]
-    sampling: SamplingMethod
+    sampling: SamplingMethod,
 }
 
 #[derive(Default, Deserialize)]
@@ -66,16 +64,15 @@ struct NamedGeometryInit<T> {
     uv_mapper: String,
 
     #[serde(flatten)]
-    init: T
+    init: T,
 }
 
 // Main config struct that is parsed
 
 #[derive(Default, Deserialize)]
 #[serde(default)]
-#[serde(deny_unknown_fields)] 
+#[serde(deny_unknown_fields)]
 struct RawConfig {
-
     #[serde(rename = "material")]
     materials: Vec<NamedMaterial>,
 
@@ -101,7 +98,7 @@ struct RawConfig {
     cameras: Vec<NamedCamera>,
 
     #[serde(rename = "render-params")]
-    render_params: Vec<NamedRenderParams>
+    render_params: Vec<NamedRenderParams>,
 }
 
 // Useful defaults
@@ -119,22 +116,21 @@ pub fn const_true() -> bool {
 pub struct Config {
     pub scene: Scene,
     pub camera_config: CameraConfig,
-    pub render_params_config: RenderParamsConfig
+    pub render_params_config: RenderParamsConfig,
 }
 
 pub enum CameraConfig {
     Single(Camera),
-    Multiple(HashMap<String, Camera>)
+    Multiple(HashMap<String, Camera>),
 }
 
 pub enum RenderParamsConfig {
     Single(RenderParamsOverride),
-    Multiple(HashMap<String, RenderParamsOverride>)
+    Multiple(HashMap<String, RenderParamsOverride>),
 }
 
 // TODO: Get rid of code duplication all over this module
-pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::error::Error>> {
-
+pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<dyn std::error::Error>> {
     let content = std::fs::read_to_string(path)?;
 
     let config: RawConfig = toml::from_str(&content)?;
@@ -143,16 +139,23 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
 
     // Check if all materials and uv mapeprs combined have unique keys
 
-    let all_unique = config.materials.iter()
-        .all(|x| into_uvm_map.insert(x.name(), x).is_none()) &&
-        config.uvm_checkerboards.iter()
-        .all(|x| into_uvm_map.insert(x.name(), x).is_none()) &&
-        config.uvm_textures.iter()
-        .all(|x| into_uvm_map.insert(x.name(), x).is_none());
+    let all_unique = config
+        .materials
+        .iter()
+        .all(|x| into_uvm_map.insert(x.name(), x).is_none())
+        && config
+            .uvm_checkerboards
+            .iter()
+            .all(|x| into_uvm_map.insert(x.name(), x).is_none())
+        && config
+            .uvm_textures
+            .iter()
+            .all(|x| into_uvm_map.insert(x.name(), x).is_none());
 
     if !all_unique {
         return Err("The set of names of all materials and uv mappers 
-            combined must not contain duplicates".into());
+            combined must not contain duplicates"
+            .into());
     }
 
     // put all materials (but not uv mappers!) into a map
@@ -166,8 +169,8 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     let mut uv_mapper_map = HashMap::new();
 
     for (key, into_uvm) in into_uvm_map {
-
-        let uvm = into_uvm.into_uv_mapper(&mat_map)
+        let uvm = into_uvm
+            .into_uv_mapper(&mat_map)
             .map_err(|err| format!("{}: {}", key, err))?;
 
         uv_mapper_map.insert(key, uvm);
@@ -214,8 +217,9 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
         let mut cam_map = HashMap::new();
 
         for named_cam in config.cameras {
-            if  !named_cam.name.is_empty() &&
-                cam_map.insert(named_cam.name, named_cam.camera).is_some() {
+            if !named_cam.name.is_empty()
+                && cam_map.insert(named_cam.name, named_cam.camera).is_some()
+            {
                 return Err("Multiple cameras must have unique, non-empty name keys".into());
             }
         }
@@ -235,9 +239,14 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
         let mut rp_map = HashMap::new();
 
         for named_rp in config.render_params {
-            if  !named_rp.name.is_empty() &&
-                rp_map.insert(named_rp.name, named_rp.render_params).is_some() {
-                return Err("Multiple render-params structs must have unique, non-empty name keys".into());
+            if !named_rp.name.is_empty()
+                && rp_map
+                    .insert(named_rp.name, named_rp.render_params)
+                    .is_some()
+            {
+                return Err(
+                    "Multiple render-params structs must have unique, non-empty name keys".into(),
+                );
             }
         }
 
@@ -247,65 +256,82 @@ pub fn parse<P: AsRef<std::path::Path>>(path: P) -> Result<Config, Box<std::erro
     Ok(Config {
         scene,
         camera_config,
-        render_params_config
+        render_params_config,
     })
 }
 
-fn str_to_uv_mapper(key: &str, uv_mapper_map: &HashMap<&str, Arc<dyn UvMapper>>) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
+fn str_to_uv_mapper(
+    key: &str,
+    uv_mapper_map: &HashMap<&str, Arc<dyn UvMapper>>,
+) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
     if key.is_empty() {
         Ok(Arc::new(StaticUvMapper(Material::default())))
     } else {
-        Ok(Arc::clone(uv_mapper_map.get(key)
-            .ok_or(format!("UV mapper or material \"{}\" not found", key))?))
+        Ok(Arc::clone(uv_mapper_map.get(key).ok_or(format!(
+            "UV mapper or material \"{}\" not found",
+            key
+        ))?))
     }
 }
 
 trait IntoUvMapper {
     fn name(&self) -> &str;
-    fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
-        -> Result<Arc<dyn UvMapper>, Box<std::error::Error>>;
+    fn into_uv_mapper(
+        &self,
+        mat_map: &HashMap<&str, Material>,
+    ) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>>;
 }
 
 impl IntoUvMapper for NamedMaterial {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-    fn name(&self) -> &str { &self.name }
-
-    fn into_uv_mapper(&self, _mat_map: &HashMap<&str, Material>) 
-        -> Result<Arc<dyn UvMapper>, Box<std::error::Error>> {
+    fn into_uv_mapper(
+        &self,
+        _mat_map: &HashMap<&str, Material>,
+    ) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
         Ok(Arc::new(StaticUvMapper(self.material)))
     }
 }
 
 impl IntoUvMapper for UvmCheckerboardInit {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-    fn name(&self) -> &str { &self.name }
-
-    fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
-        -> Result<Arc<dyn UvMapper>, Box<std::error::Error>> {
-
-        let even_mat = mat_map.get(&self.even[..])
+    fn into_uv_mapper(
+        &self,
+        mat_map: &HashMap<&str, Material>,
+    ) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
+        let even_mat = mat_map
+            .get(&self.even[..])
             .ok_or("Material for key \"even\" not found")?
             .clone();
 
-        let odd_mat = mat_map.get(&self.odd[..])
+        let odd_mat = mat_map
+            .get(&self.odd[..])
             .ok_or("Material for key \"odd\" not found")?
             .clone();
-        
+
         Ok(Arc::new(CheckerboardUvMapper(even_mat, odd_mat)))
     }
 }
 
 impl IntoUvMapper for UvmTextureInit {
+    fn name(&self) -> &str {
+        &self.name
+    }
 
-    fn name(&self) -> &str { &self.name }
-
-   fn into_uv_mapper(&self, mat_map: &HashMap<&str, Material>) 
-        -> Result<Arc<dyn UvMapper>, Box<std::error::Error>> {
-        
+    fn into_uv_mapper(
+        &self,
+        mat_map: &HashMap<&str, Material>,
+    ) -> Result<Arc<dyn UvMapper>, Box<dyn std::error::Error>> {
         let base_mat = if self.base.is_empty() {
             Material::default()
         } else {
-            mat_map.get(&self.base[..])
+            mat_map
+                .get(&self.base[..])
                 .ok_or("Material for key \"base_mat\" not found")?
                 .clone()
         };
